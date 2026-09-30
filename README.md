@@ -63,7 +63,7 @@ Lab 1 defines the product vision, MVP scope, requirements, development approach,
 
 ## Repository
 
-**GitHub Classroom URL:** [Insert the accepted public GitHub Classroom repository URL]
+**GitHub Classroom URL:** https://github.com/ansxxsar/learnlens
 
 ## License
 
