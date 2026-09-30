@@ -58,8 +58,8 @@ Lab 1 defines the product vision, MVP scope, requirements, development approach,
 
 ## Team
 
-- **Team member 1:** [Full name]
-- **Team member 2:** [Full name]
+- **Team member 1:** Ansar Murat  
+- **Team member 2:** Ardak Artykbayeva
 
 ## Repository
 
