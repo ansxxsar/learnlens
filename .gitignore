@@ -1,0 +1,14 @@
+# Local environment and generated files
+.env
+.venv/
+node_modules/
+__pycache__/
+render/
+build_plan.py
+*.pyc
+
+# Editor and operating system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
