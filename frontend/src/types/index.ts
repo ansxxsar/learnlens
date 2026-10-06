@@ -30,3 +30,11 @@ export interface SubmissionResult {
   totalTests: number;
   feedback: Feedback;
 }
+
+export interface StudentProfile {
+  name: string;
+  initials: string;
+  email: string;
+  course: string;
+  streakDays: number;
+}

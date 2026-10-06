@@ -38,7 +38,7 @@ export function DashboardContainer() {
       {error && <p className="error-message">{error}</p>}
 
       <div className="dashboard__grid">
-        <aside className="assignment-list">
+        <aside className="assignment-list" id="assignments">
           <div className="section-heading">
             <span className="eyebrow">Python course</span>
             <h2>Assignments</h2>

@@ -1,5 +1,10 @@
-import { mockAssignments, mockProgress } from "../data/mockData";
-import type { Assignment, StudentProgress, SubmissionResult } from "../types";
+import { mockAssignments, mockProgress, mockStudent } from "../data/mockData";
+import type {
+  Assignment,
+  StudentProfile,
+  StudentProgress,
+  SubmissionResult,
+} from "../types";
 
 const delay = (milliseconds: number): Promise<void> =>
   new Promise((resolve) => {
@@ -14,6 +19,17 @@ export const fetchAssignments = async (): Promise<Assignment[]> => {
 export const fetchProgress = async (): Promise<StudentProgress> => {
   await delay(400);
   return mockProgress;
+};
+
+export const fetchStudent = async (): Promise<StudentProfile> => {
+  await delay(300);
+  return mockStudent;
+};
+
+// Mock of the planned POST /auth/sign-out endpoint. The real version must
+// invalidate the session on the server; clearing client state is not enough.
+export const signOutStudent = async (): Promise<void> => {
+  await delay(500);
 };
 
 interface CodeCheck {

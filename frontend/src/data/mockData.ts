@@ -1,4 +1,4 @@
-import type { Assignment, StudentProgress } from "../types";
+import type { Assignment, StudentProfile, StudentProgress } from "../types";
 
 export const mockAssignments: Assignment[] = [
   {
@@ -37,4 +37,12 @@ export const mockProgress: StudentProgress = {
   nextLevelXp: 500,
   completedAssignments: 1,
   totalAssignments: 3,
+};
+
+export const mockStudent: StudentProfile = {
+  name: "Alex Morgan",
+  initials: "AM",
+  email: "alex.morgan@example.edu",
+  course: "Python Foundations",
+  streakDays: 5,
 };

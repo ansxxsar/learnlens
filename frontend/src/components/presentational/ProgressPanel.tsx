@@ -10,7 +10,7 @@ export function ProgressPanel({ progress }: ProgressPanelProps) {
   );
 
   return (
-    <section className="progress-panel">
+    <section className="progress-panel" id="progress">
       <div>
         <span className="eyebrow">Your progress</span>
         <h2>Level {progress.level}</h2>

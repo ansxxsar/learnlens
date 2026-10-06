@@ -2,44 +2,60 @@ import { create } from "zustand";
 import {
   fetchAssignments,
   fetchProgress,
+  fetchStudent,
+  signOutStudent,
   submitPythonCode,
 } from "../services/api";
-import type { Assignment, StudentProgress, SubmissionResult } from "../types";
+import type {
+  Assignment,
+  StudentProfile,
+  StudentProgress,
+  SubmissionResult,
+} from "../types";
 
 interface AppState {
   assignments: Assignment[];
   progress: StudentProgress | null;
+  student: StudentProfile | null;
   selectedAssignmentId: number | null;
   submissionResult: SubmissionResult | null;
   isLoading: boolean;
   isSubmitting: boolean;
+  isSigningOut: boolean;
+  isSignedOut: boolean;
   error: string | null;
   loadDashboard: () => Promise<void>;
   selectAssignment: (assignmentId: number) => void;
   submitCode: (code: string) => Promise<void>;
+  signOut: () => Promise<void>;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
   assignments: [],
   progress: null,
+  student: null,
   selectedAssignmentId: null,
   submissionResult: null,
   isLoading: false,
   isSubmitting: false,
+  isSigningOut: false,
+  isSignedOut: false,
   error: null,
 
   loadDashboard: async () => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, isSignedOut: false, error: null });
 
     try {
-      const [assignments, progress] = await Promise.all([
+      const [assignments, progress, student] = await Promise.all([
         fetchAssignments(),
         fetchProgress(),
+        fetchStudent(),
       ]);
 
       set({
         assignments,
         progress,
+        student,
         selectedAssignmentId: assignments[0]?.id ?? null,
         isLoading: false,
       });
@@ -79,6 +95,30 @@ export const useAppStore = create<AppState>((set, get) => ({
             ? error.message
             : "Unable to submit the solution.",
         isSubmitting: false,
+      });
+    }
+  },
+
+  signOut: async () => {
+    set({ isSigningOut: true, error: null });
+
+    try {
+      await signOutStudent();
+
+      // Drop every piece of student data so nothing stays visible after sign-out.
+      set({
+        assignments: [],
+        progress: null,
+        student: null,
+        selectedAssignmentId: null,
+        submissionResult: null,
+        isSigningOut: false,
+        isSignedOut: true,
+      });
+    } catch {
+      set({
+        error: "Unable to sign out. Please try again.",
+        isSigningOut: false,
       });
     }
   },
