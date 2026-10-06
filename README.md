@@ -10,8 +10,8 @@ Programming instructors often review many similar submissions, repeat the same e
 
 For the first release, LearnLens focuses on one complete learning cycle:
 
-1. An instructor creates a Python assignment, rubric, and automated tests.
-2. A student submits Python code.
+1. An instructor creates a programming assignment, rubric, and automated tests.
+2. A student chooses a language (Python, Java, C++, JavaScript, HTML, or CSS) and submits code.
 3. The platform runs the code in an isolated execution environment.
 4. Deterministic tests produce objective evidence about correctness.
 5. An AI feedback service converts that evidence into personalized, rubric-aligned guidance without directly giving away the final solution.
@@ -20,14 +20,14 @@ For the first release, LearnLens focuses on one complete learning cycle:
 
 ## Target users
 
-- Students in introductory Python programming courses
+- Students in introductory programming courses (Python, Java, C++, JavaScript, HTML, or CSS)
 - Instructors and teaching assistants managing programming assignments
 
 ## MVP scope
 
-The MVP will include authentication and role-based access, Python assignment creation, code submission, isolated test execution, rubric-aligned AI feedback, resubmission history, short post-submission questions, XP and level progress, and instructor analytics.
+The MVP will include authentication and role-based access, assignment creation, code submission in Python, Java, C++, JavaScript, HTML, or CSS, isolated test execution, rubric-aligned AI feedback, resubmission history, short post-submission questions, XP and level progress, and instructor analytics.
 
-The MVP will not include a native mobile application, support for multiple programming languages, a complete learning-management system, real-time multiplayer features, or fully automatic final grading. The web interface will be responsive and usable on laptops and phones.
+The MVP will not include a native mobile application, languages beyond Python, Java, C++, JavaScript, HTML, and CSS, a complete learning-management system, real-time multiplayer features, or fully automatic final grading. The web interface will be responsive and usable on laptops and phones.
 
 ## Success indicators
 

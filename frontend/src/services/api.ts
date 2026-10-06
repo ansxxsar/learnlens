@@ -1,10 +1,12 @@
 import { mockAssignments, mockProgress, mockStudent } from "../data/mockData";
 import type {
   Assignment,
+  ProgrammingLanguage,
   StudentProfile,
   StudentProgress,
   SubmissionResult,
 } from "../types";
+import { evaluateAssignment } from "./mockEvaluator";
 
 const delay = (milliseconds: number): Promise<void> =>
   new Promise((resolve) => {
@@ -32,107 +34,18 @@ export const signOutStudent = async (): Promise<void> => {
   await delay(500);
 };
 
-interface CodeCheck {
-  passed: boolean;
-  success: string;
-  improvement: string;
-}
-
-const evaluateAssignment = (
+export const submitSolution = async (
   assignmentId: number,
-  code: string,
-): CodeCheck[] => {
-  const normalizedCode = code.toLowerCase();
-
-  if (assignmentId === 1) {
-    return [
-      {
-        passed: /[a-z_]\w*\s*=(?!=)/i.test(code),
-        success: "You created and assigned a variable.",
-        improvement:
-          "Create at least one variable using the assignment operator.",
-      },
-      {
-        passed: /\b(int|float|str|bool)\s*\(/.test(normalizedCode),
-        success: "You used explicit type conversion.",
-        improvement:
-          "Use int(), float(), str(), or bool() for type conversion.",
-      },
-      {
-        passed: /\bprint\s*\(/.test(normalizedCode),
-        success: "You displayed the result.",
-        improvement: "Use print() to display the converted value.",
-      },
-      {
-        passed: /#/.test(code),
-        success: "You documented part of your solution.",
-        improvement: "Add a short comment explaining the conversion.",
-      },
-    ];
-  }
-
-  if (assignmentId === 2) {
-    return [
-      {
-        passed: /\bif\b/.test(normalizedCode),
-        success: "You used an if statement.",
-        improvement: "Add an if statement for the main condition.",
-      },
-      {
-        passed: /\b(elif|else)\b/.test(normalizedCode),
-        success: "You handled an alternative condition.",
-        improvement: "Handle another case using elif or else.",
-      },
-      {
-        passed: /(==|!=|>=|<=|>|<)/.test(code),
-        success: "You used a comparison operator.",
-        improvement: "Compare the score with an appropriate boundary value.",
-      },
-      {
-        passed: /\b(print|return)\s*\(/.test(normalizedCode),
-        success: "Your solution produces an output.",
-        improvement: "Return or print the calculated grade.",
-      },
-    ];
-  }
-
-  return [
-    {
-      passed: /\bdef\s+[a-z_]\w*\s*\(/i.test(code),
-      success: "You defined a function.",
-      improvement: "Define a function using the def keyword.",
-    },
-    {
-      passed: /\bdef\s+[a-z_]\w*\s*\([^)]*[a-z_]\w*[^)]*\)/i.test(code),
-      success: "Your function accepts a parameter.",
-      improvement: "Add at least one parameter to the function.",
-    },
-    {
-      passed: /\breturn\b/.test(normalizedCode),
-      success: "Your function returns a value.",
-      improvement: "Use return to send a result back from the function.",
-    },
-    {
-      passed: /\b[a-z_]\w*\s*\([^)]*\)/i.test(
-        code.replace(/\bdef\s+[a-z_]\w*\s*\([^)]*\)/i, ""),
-      ),
-      success: "You called the function.",
-      improvement: "Call the function with a sample argument.",
-    },
-  ];
-};
-
-export const submitPythonCode = async (
-  assignmentId: number,
+  language: ProgrammingLanguage,
   code: string,
 ): Promise<SubmissionResult> => {
   await delay(900);
 
   if (code.trim().length === 0) {
-    throw new Error("Please enter your Python solution.");
+    throw new Error("Please enter your solution.");
   }
 
-  const checks = evaluateAssignment(assignmentId, code);
+  const checks = evaluateAssignment(assignmentId, language, code);
   const passedChecks = checks.filter((check) => check.passed);
   const failedChecks = checks.filter((check) => !check.passed);
   const score = Math.round((passedChecks.length / checks.length) * 100);

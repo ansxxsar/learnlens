@@ -1,22 +1,28 @@
 import { useState } from "react";
+import { starterCode } from "../../data/languages";
+import type { LanguageOption, ProgrammingLanguage } from "../../types";
 
 interface CodeSubmissionFormProps {
   assignmentTitle: string;
+  language: ProgrammingLanguage;
+  languages: LanguageOption[];
   isSubmitting: boolean;
+  onLanguageChange: (language: ProgrammingLanguage) => void;
   onSubmit: (code: string) => Promise<void>;
 }
 
-const starterCode = `def get_grade(score):
-    # Write your solution here
-    pass
-`;
-
 export function CodeSubmissionForm({
   assignmentTitle,
+  language,
+  languages,
   isSubmitting,
+  onLanguageChange,
   onSubmit,
 }: CodeSubmissionFormProps) {
-  const [code, setCode] = useState(starterCode);
+  // One draft per language so switching languages never discards typed code.
+  const [drafts, setDrafts] =
+    useState<Record<ProgrammingLanguage, string>>(starterCode);
+  const code = drafts[language];
 
   const handleSubmit = async () => {
     await onSubmit(code);
@@ -30,7 +36,24 @@ export function CodeSubmissionForm({
           <h2>{assignmentTitle}</h2>
         </div>
 
-        <span className="language-badge">Python</span>
+        <div className="language-picker">
+          <label htmlFor="language-select">Language</label>
+          <select
+            id="language-select"
+            className="language-select"
+            value={language}
+            disabled={isSubmitting || languages.length < 2}
+            onChange={(event) =>
+              onLanguageChange(event.target.value as ProgrammingLanguage)
+            }
+          >
+            {languages.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <label htmlFor="code-editor">Your solution</label>
@@ -39,7 +62,12 @@ export function CodeSubmissionForm({
         id="code-editor"
         className="code-editor"
         value={code}
-        onChange={(event) => setCode(event.target.value)}
+        onChange={(event) =>
+          setDrafts((current) => ({
+            ...current,
+            [language]: event.target.value,
+          }))
+        }
         spellCheck={false}
       />
 

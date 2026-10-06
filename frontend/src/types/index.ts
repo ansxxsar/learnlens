@@ -8,6 +8,7 @@ export interface Assignment {
   topic: string;
   xp: number;
   status: AssignmentStatus;
+  languages: ProgrammingLanguage[];
 }
 
 export interface Feedback {
@@ -37,4 +38,17 @@ export interface StudentProfile {
   email: string;
   course: string;
   streakDays: number;
+}
+
+export type ProgrammingLanguage =
+  | "python"
+  | "java"
+  | "cpp"
+  | "javascript"
+  | "html"
+  | "css";
+
+export interface LanguageOption {
+  id: ProgrammingLanguage;
+  label: string;
 }

@@ -20,7 +20,7 @@ Manual review of programming work is time-consuming and repetitive, especially i
 
 - Replacing the instructor's final academic judgment
 - Building a complete LMS with attendance, messaging, and scheduling
-- Supporting every programming language
+- Supporting languages beyond Python, Java, C++, JavaScript, HTML, and CSS
 - Delivering native Android and iOS applications
 - Detecting plagiarism as a definitive misconduct decision
 - Generating complete answers for students
@@ -29,7 +29,7 @@ Manual review of programming work is time-consuming and repetitive, especially i
 
 ### Student
 
-Views assigned work, submits Python code, receives feedback, answers reinforcement questions, resubmits, and reviews personal progress.
+Views assigned work, chooses a supported language, submits code, receives feedback, answers reinforcement questions, resubmits, and reviews personal progress.
 
 ### Instructor
 
@@ -41,9 +41,9 @@ Manages course access, system health, AI configuration, and audit records. This 
 
 ## 6 Core user stories and acceptance criteria
 
-### US 1 Submit Python work
+### US 1 Submit code in a supported language
 
-As a student, I want to submit Python code so that I can receive feedback on my current attempt.
+As a student, I want to choose Python, Java, C++, JavaScript, HTML, or CSS and submit my code so that I can receive feedback on my current attempt.
 
 Acceptance criteria:
 
@@ -130,7 +130,7 @@ Acceptance criteria:
 - FR 1: The system shall support student and instructor authentication.
 - FR 2: The system shall enforce course-level role-based authorization.
 - FR 3: Instructors shall create, edit, publish, close, and archive assignments.
-- FR 4: Students shall submit Python source code and view attempt history.
+- FR 4: Students shall choose a supported language (Python, Java, C++, JavaScript, HTML, or CSS), submit source code, and view attempt history.
 - FR 5: The system shall queue and execute submissions in isolated workers.
 - FR 6: The system shall calculate deterministic test outcomes before requesting AI feedback.
 - FR 7: The system shall generate rubric-aligned feedback from approved evidence.
@@ -163,7 +163,7 @@ Acceptance criteria:
 ## 10 Primary workflow
 
 1. The instructor publishes an assignment with a rubric and tests.
-2. The student submits Python code.
+2. The student chooses a supported language and submits code.
 3. The API stores the attempt and queues an execution job.
 4. An isolated worker runs tests and returns structured results.
 5. The feedback service receives only approved code, rubric, and test evidence.
@@ -183,4 +183,4 @@ Acceptance criteria:
 
 ## 12 MVP acceptance definition
 
-The MVP is complete when an instructor can publish one Python assignment with tests and a rubric, a student can submit and safely execute code, receive grounded feedback and a reinforcement question, resubmit, and see updated progress, while the instructor can review the complete attempt trail and class-level error summary.
+The MVP is complete when an instructor can publish one assignment with tests and a rubric, a student can submit code in any supported language and safely execute it, receive grounded feedback and a reinforcement question, resubmit, and see updated progress, while the instructor can review the complete attempt trail and class-level error summary.

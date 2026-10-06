@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { languageOptions } from "../../data/languages";
 import { useAppStore } from "../../store/useAppStore";
 import { AssignmentCard } from "../presentational/AssignmentCard";
 import { CodeSubmissionForm } from "../presentational/CodeSubmissionForm";
@@ -10,12 +11,14 @@ export function DashboardContainer() {
     assignments,
     progress,
     selectedAssignmentId,
+    selectedLanguage,
     submissionResult,
     isLoading,
     isSubmitting,
     error,
     loadDashboard,
     selectAssignment,
+    selectLanguage,
     submitCode,
   } = useAppStore();
 
@@ -30,6 +33,9 @@ export function DashboardContainer() {
   const selectedAssignment = assignments.find(
     (assignment) => assignment.id === selectedAssignmentId,
   );
+  const allowedLanguages = languageOptions.filter((option) =>
+    selectedAssignment?.languages.includes(option.id),
+  );
 
   return (
     <main className="dashboard">
@@ -40,7 +46,7 @@ export function DashboardContainer() {
       <div className="dashboard__grid">
         <aside className="assignment-list" id="assignments">
           <div className="section-heading">
-            <span className="eyebrow">Python course</span>
+            <span className="eyebrow">Programming course</span>
             <h2>Assignments</h2>
           </div>
 
@@ -58,7 +64,10 @@ export function DashboardContainer() {
           {selectedAssignment ? (
             <CodeSubmissionForm
               assignmentTitle={selectedAssignment.title}
+              language={selectedLanguage}
+              languages={allowedLanguages}
               isSubmitting={isSubmitting}
+              onLanguageChange={selectLanguage}
               onSubmit={submitCode}
             />
           ) : (

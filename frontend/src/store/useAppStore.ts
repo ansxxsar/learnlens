@@ -1,23 +1,36 @@
 import { create } from "zustand";
+import { defaultLanguage } from "../data/languages";
 import {
   fetchAssignments,
   fetchProgress,
   fetchStudent,
   signOutStudent,
-  submitPythonCode,
+  submitSolution,
 } from "../services/api";
 import type {
   Assignment,
+  ProgrammingLanguage,
   StudentProfile,
   StudentProgress,
   SubmissionResult,
 } from "../types";
+
+// Keep the current language when the assignment allows it; otherwise use the
+// assignment's first allowed language (e.g. HTML for the HTML assignment).
+const languageFor = (
+  assignment: Assignment | undefined,
+  current: ProgrammingLanguage,
+): ProgrammingLanguage =>
+  !assignment || assignment.languages.includes(current)
+    ? current
+    : (assignment.languages[0] ?? current);
 
 interface AppState {
   assignments: Assignment[];
   progress: StudentProgress | null;
   student: StudentProfile | null;
   selectedAssignmentId: number | null;
+  selectedLanguage: ProgrammingLanguage;
   submissionResult: SubmissionResult | null;
   isLoading: boolean;
   isSubmitting: boolean;
@@ -26,6 +39,7 @@ interface AppState {
   error: string | null;
   loadDashboard: () => Promise<void>;
   selectAssignment: (assignmentId: number) => void;
+  selectLanguage: (language: ProgrammingLanguage) => void;
   submitCode: (code: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -35,6 +49,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   progress: null,
   student: null,
   selectedAssignmentId: null,
+  selectedLanguage: defaultLanguage,
   submissionResult: null,
   isLoading: false,
   isSubmitting: false,
@@ -57,6 +72,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         progress,
         student,
         selectedAssignmentId: assignments[0]?.id ?? null,
+        selectedLanguage: languageFor(assignments[0], get().selectedLanguage),
         isLoading: false,
       });
     } catch {
@@ -68,15 +84,25 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   selectAssignment: (assignmentId) => {
+    const assignment = get().assignments.find(
+      (candidate) => candidate.id === assignmentId,
+    );
+
     set({
       selectedAssignmentId: assignmentId,
+      selectedLanguage: languageFor(assignment, get().selectedLanguage),
       submissionResult: null,
       error: null,
     });
   },
 
+  selectLanguage: (language) => {
+    // Feedback belongs to one language, so clear it when the student switches.
+    set({ selectedLanguage: language, submissionResult: null, error: null });
+  },
+
   submitCode: async (code) => {
-    const assignmentId = get().selectedAssignmentId;
+    const { selectedAssignmentId: assignmentId, selectedLanguage } = get();
 
     if (assignmentId === null) {
       set({ error: "Select an assignment first." });
@@ -86,7 +112,11 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ isSubmitting: true, error: null, submissionResult: null });
 
     try {
-      const submissionResult = await submitPythonCode(assignmentId, code);
+      const submissionResult = await submitSolution(
+        assignmentId,
+        selectedLanguage,
+        code,
+      );
       set({ submissionResult, isSubmitting: false });
     } catch (error) {
       set({

@@ -1,24 +1,37 @@
-import type { Assignment, StudentProfile, StudentProgress } from "../types";
+import type {
+  Assignment,
+  ProgrammingLanguage,
+  StudentProfile,
+  StudentProgress,
+} from "../types";
+
+const programmingLanguages: ProgrammingLanguage[] = [
+  "python",
+  "java",
+  "cpp",
+  "javascript",
+];
 
 export const mockAssignments: Assignment[] = [
   {
     id: 1,
-    title: "Python Variables and Data Types",
-    description:
-      "Create variables and convert values between Python data types.",
+    title: "Variables and Data Types",
+    description: "Create variables and convert values between data types.",
     difficulty: "Beginner",
-    topic: "Python Basics",
+    topic: "Programming Basics",
     xp: 100,
     status: "completed",
+    languages: programmingLanguages,
   },
   {
     id: 2,
     title: "Conditional Statements",
-    description: "Use if, elif, and else to solve a grading problem.",
+    description: "Use if and else branches to solve a grading problem.",
     difficulty: "Beginner",
     topic: "Control Flow",
     xp: 120,
     status: "in-progress",
+    languages: programmingLanguages,
   },
   {
     id: 3,
@@ -28,6 +41,29 @@ export const mockAssignments: Assignment[] = [
     topic: "Functions",
     xp: 150,
     status: "not-started",
+    languages: programmingLanguages,
+  },
+  {
+    id: 4,
+    title: "Page Structure with HTML",
+    description:
+      "Build a profile page with a heading, a paragraph, a list, and a link.",
+    difficulty: "Beginner",
+    topic: "Web Basics",
+    xp: 100,
+    status: "not-started",
+    languages: ["html"],
+  },
+  {
+    id: 5,
+    title: "Styling with CSS",
+    description:
+      "Style a card with a selector, colors, spacing, and a flex or grid layout.",
+    difficulty: "Beginner",
+    topic: "Web Basics",
+    xp: 100,
+    status: "not-started",
+    languages: ["css"],
   },
 ];
 
@@ -36,13 +72,13 @@ export const mockProgress: StudentProgress = {
   xp: 340,
   nextLevelXp: 500,
   completedAssignments: 1,
-  totalAssignments: 3,
+  totalAssignments: 5,
 };
 
 export const mockStudent: StudentProfile = {
   name: "Alex Morgan",
   initials: "AM",
   email: "alex.morgan@example.edu",
-  course: "Python Foundations",
+  course: "Programming Foundations",
   streakDays: 5,
 };

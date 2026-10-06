@@ -33,8 +33,8 @@ export function DashboardPage() {
           <span className="eyebrow">Welcome back</span>
           <h1>Turn every attempt into progress.</h1>
           <p>
-            Submit your Python solution, understand your mistakes, and receive a
-            clear next step.
+            Write code in Python, Java, C++, JavaScript, HTML, or CSS, understand
+            your mistakes, and receive a clear next step.
           </p>
         </div>
 

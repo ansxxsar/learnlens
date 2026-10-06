@@ -56,7 +56,7 @@ Exact endpoint conventions will be documented with an OpenAPI specification duri
 ### Milestone 3 Submission and safe execution
 
 - Implement immutable attempts and job states.
-- Build an isolated Python runner and structured test result format.
+- Build isolated runners for Python, Java, C++, and JavaScript, plus static checks for HTML and CSS, with a shared structured test result format.
 - Add execution limits, failure handling, and security tests.
 
 ### Milestone 4 Feedback and revision loop

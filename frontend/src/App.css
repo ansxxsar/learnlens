@@ -384,8 +384,7 @@
   color: #237b67;
 }
 
-.status,
-.language-badge {
+.status {
   padding: 6px 9px;
   font-size: 11px;
   font-weight: 700;
@@ -417,9 +416,37 @@
   box-shadow: 0 12px 35px rgba(30, 42, 70, 0.06);
 }
 
-.language-badge {
-  color: #ffffff;
-  background: #356aaf;
+.language-picker {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.submission-panel .language-picker label {
+  margin: 0 0 4px;
+  color: #7b8496;
+  font-size: 12px;
+}
+
+.language-select {
+  padding: 8px 32px 8px 12px;
+  color: #172033;
+  background: #ffffff;
+  border: 1px solid #d8deea;
+  border-radius: 10px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.language-select:focus-visible {
+  outline: 3px solid rgba(91, 91, 214, 0.35);
+  border-color: #7777e5;
+}
+
+.language-select:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
 }
 
 .submission-panel label {
