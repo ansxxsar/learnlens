@@ -1,7 +1,20 @@
+export interface Course {
+  id: number;
+  slug: string;
+  title: string;
+  description: string;
+  instructor: string;
+  category: string;
+  completedLabs: number;
+  totalLabs: number;
+  color: "purple" | "blue" | "green";
+}
+
 export type AssignmentStatus = "not-started" | "in-progress" | "completed";
 
 export interface Assignment {
   id: number;
+  courseId: number;
   title: string;
   description: string;
   difficulty: "Beginner" | "Intermediate" | "Advanced";

@@ -1,4 +1,4 @@
-import { DashboardContainer } from "../components/containers/DashboardContainer";
+import { CoursesContainer } from "../components/containers/CoursesContainer";
 import { UserMenuContainer } from "../components/containers/UserMenuContainer";
 
 export function DashboardPage() {
@@ -17,9 +17,11 @@ export function DashboardPage() {
           >
             Dashboard
           </a>
-          <a className="navigation__link" href="#assignments">
-            Assignments
+
+          <a className="navigation__link" href="#courses">
+            Courses
           </a>
+
           <a className="navigation__link" href="#progress">
             Progress
           </a>
@@ -31,10 +33,10 @@ export function DashboardPage() {
       <section className="hero" id="dashboard">
         <div>
           <span className="eyebrow">Welcome back</span>
-          <h1>Turn every attempt into progress.</h1>
+          <h1>Continue your learning journey.</h1>
           <p>
-            Write code in Python, Java, C++, JavaScript, HTML, or CSS, understand
-            your mistakes, and receive a clear next step.
+            Select a course, complete laboratory assignments, receive
+            personalized feedback, and monitor your progress.
           </p>
         </div>
 
@@ -44,7 +46,7 @@ export function DashboardPage() {
         </div>
       </section>
 
-      <DashboardContainer />
+      <CoursesContainer />
     </div>
   );
 }
