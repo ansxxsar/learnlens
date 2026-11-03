@@ -57,20 +57,29 @@ export function CoursePage() {
         ) : (
           <div className="courses-grid">
             {labs.map((lab) => (
-              <article className="course-card" key={lab.id}>
+              <Link
+                className="course-card course-card--link"
+                key={lab.id}
+                to={`/courses/${course.slug}/labs/${lab.id}`}
+              >
                 <div className="course-card__content">
                   <span className="eyebrow">{lab.topic}</span>
+
                   <h3>{lab.title}</h3>
+
                   <p>{lab.description}</p>
 
                   <div className="course-card__footer">
                     <span>{lab.difficulty}</span>
+
                     <span className={`status status--${lab.status}`}>
                       {lab.status.replaceAll("-", " ")}
                     </span>
                   </div>
+
+                  <span className="course-card__open">Open laboratory →</span>
                 </div>
-              </article>
+              </Link>
             ))}
           </div>
         )}
