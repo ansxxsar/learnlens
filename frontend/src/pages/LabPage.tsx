@@ -1,5 +1,10 @@
+import { useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
+import { CodeSubmissionForm } from "../components/presentational/CodeSubmissionForm";
+import { FeedbackPanel } from "../components/presentational/FeedbackPanel";
+import { languageOptions } from "../data/languages";
 import { mockAssignments, mockCourses } from "../data/mockData";
+import { useAppStore } from "../store/useAppStore";
 
 export function LabPage() {
   const { courseSlug, labId } = useParams();
@@ -10,6 +15,31 @@ export function LabPage() {
     (assignment) =>
       assignment.id === Number(labId) && assignment.courseId === course?.id,
   );
+
+  const {
+    selectedLanguage,
+    submissionResult,
+    isLoading,
+    isSubmitting,
+    error,
+    loadDashboard,
+    selectAssignment,
+    selectLanguage,
+    submitCode,
+  } = useAppStore();
+
+  useEffect(() => {
+    if (!lab) {
+      return;
+    }
+
+    const loadLab = async () => {
+      await loadDashboard();
+      selectAssignment(lab.id);
+    };
+
+    void loadLab();
+  }, [lab, loadDashboard, selectAssignment]);
 
   if (!course || !lab) {
     return (
@@ -24,6 +54,10 @@ export function LabPage() {
       </main>
     );
   }
+
+  const allowedLanguages = languageOptions.filter((option) =>
+    lab.languages.includes(option.id),
+  );
 
   return (
     <div className="app">
@@ -64,20 +98,25 @@ export function LabPage() {
           </span>
           <span>Back to laboratory list</span>
         </Link>
-        <section className="submission-panel">
-          <span className="eyebrow">Laboratory information</span>
-          <h2>{lab.title}</h2>
 
-          <p>{lab.description}</p>
+        {error && <p className="error-message">{error}</p>}
 
-          <div className="assignment-card__footer">
-            <span>Difficulty: {lab.difficulty}</span>
+        {isLoading ? (
+          <p className="state-message">Loading laboratory workspace...</p>
+        ) : (
+          <div className="workspace">
+            <CodeSubmissionForm
+              assignmentTitle={lab.title}
+              language={selectedLanguage}
+              languages={allowedLanguages}
+              isSubmitting={isSubmitting}
+              onLanguageChange={selectLanguage}
+              onSubmit={submitCode}
+            />
 
-            <span className={`status status--${lab.status}`}>
-              {lab.status.replaceAll("-", " ")}
-            </span>
+            {submissionResult && <FeedbackPanel result={submissionResult} />}
           </div>
-        </section>
+        )}
       </main>
     </div>
   );
