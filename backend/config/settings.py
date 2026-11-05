@@ -95,6 +95,22 @@ DATABASES = {
 }
 
 
+# API defaults. Every endpoint requires a signed-in user unless a view opts out.
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': ['accounts.authentication.SessionAuth'],
+    'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.IsAuthenticated'],
+    'DEFAULT_RENDERER_CLASSES': ['rest_framework.renderers.JSONRenderer'],
+    'DEFAULT_PARSER_CLASSES': ['rest_framework.parsers.JSONParser'],
+    # Counted per IP address, and a whole classroom may share one, so this
+    # cannot be much stricter without blocking students at the start of a class.
+    'DEFAULT_THROTTLE_RATES': {'sign_in': '30/minute'},
+}
+
+# Cookies travel over HTTPS only, except in local development.
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+
+
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 
