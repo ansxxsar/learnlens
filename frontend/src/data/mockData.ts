@@ -76,6 +76,8 @@ export const mockProgress: StudentProgress = {
 };
 
 export const mockStudent: StudentProfile = {
+  accountType: "student",
+  teachingCourses: [],
   name: "Alex Morgan",
   initials: "AM",
   email: "alex.morgan@example.edu",

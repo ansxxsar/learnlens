@@ -32,12 +32,33 @@ export interface SubmissionResult {
   feedback: Feedback;
 }
 
+export type AccountType = "student" | "teacher" | "pending_teacher" | "admin";
+
 export interface StudentProfile {
+  accountType: AccountType;
+  teachingCourses: string[];
   name: string;
   initials: string;
   email: string;
   course: string;
   streakDays: number;
+}
+
+export interface ApiEnrollment {
+  course_id: number;
+  course_code: string;
+  course_title: string;
+  section_code: string | null;
+  role: "student" | "instructor";
+}
+
+export interface ApiUser {
+  id: number;
+  email: string;
+  full_name: string;
+  is_admin: boolean;
+  account_type: AccountType;
+  enrollments: ApiEnrollment[];
 }
 
 export type ProgrammingLanguage =

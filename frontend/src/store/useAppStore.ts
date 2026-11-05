@@ -1,10 +1,13 @@
 import { create } from "zustand";
 import { defaultLanguage } from "../data/languages";
 import {
+  ApiError,
   fetchAssignments,
+  fetchCurrentStudent,
   fetchProgress,
-  fetchStudent,
-  signOutStudent,
+  register as registerAccount,
+  signIn as signInWithPassword,
+  signOut as endSession,
   submitSolution,
 } from "../services/api";
 import type {
@@ -25,6 +28,15 @@ const languageFor = (
     ? current
     : (assignment.languages[0] ?? current);
 
+const authErrorState = (error: unknown) => ({
+  isAuthenticating: false,
+  authError:
+    error instanceof Error
+      ? error.message
+      : "Something went wrong. Please try again.",
+  authFieldErrors: error instanceof ApiError ? error.fieldErrors : {},
+});
+
 interface AppState {
   assignments: Assignment[];
   progress: StudentProgress | null;
@@ -37,6 +49,14 @@ interface AppState {
   isSigningOut: boolean;
   isSignedOut: boolean;
   error: string | null;
+  isAuthChecked: boolean;
+  isAuthenticating: boolean;
+  authError: string | null;
+  authFieldErrors: Record<string, string[]>;
+  loadSession: () => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
+  register: (fullName: string, email: string, password: string) => Promise<void>;
+  clearAuthErrors: () => void;
   loadDashboard: () => Promise<void>;
   selectAssignment: (assignmentId: number) => void;
   selectLanguage: (language: ProgrammingLanguage) => void;
@@ -56,21 +76,58 @@ export const useAppStore = create<AppState>((set, get) => ({
   isSigningOut: false,
   isSignedOut: false,
   error: null,
+  isAuthChecked: false,
+  isAuthenticating: false,
+  authError: null,
+  authFieldErrors: {},
 
-  loadDashboard: async () => {
-    set({ isLoading: true, isSignedOut: false, error: null });
+  loadSession: async () => {
+    try {
+      set({ student: await fetchCurrentStudent(), isAuthChecked: true });
+    } catch {
+      // Without a confirmed session, treat the visitor as signed out.
+      set({ student: null, isAuthChecked: true });
+    }
+  },
+
+  signIn: async (email, password) => {
+    set({ isAuthenticating: true, authError: null, authFieldErrors: {} });
 
     try {
-      const [assignments, progress, student] = await Promise.all([
+      const student = await signInWithPassword(email, password);
+      set({ student, isAuthenticating: false, isSignedOut: false });
+    } catch (error) {
+      set(authErrorState(error));
+    }
+  },
+
+  register: async (fullName, email, password) => {
+    set({ isAuthenticating: true, authError: null, authFieldErrors: {} });
+
+    try {
+      const student = await registerAccount(fullName, email, password);
+      set({ student, isAuthenticating: false, isSignedOut: false });
+    } catch (error) {
+      set(authErrorState(error));
+    }
+  },
+
+  clearAuthErrors: () => {
+    set({ authError: null, authFieldErrors: {} });
+  },
+
+  loadDashboard: async () => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const [assignments, progress] = await Promise.all([
         fetchAssignments(),
         fetchProgress(),
-        fetchStudent(),
       ]);
 
       set({
         assignments,
         progress,
-        student,
         selectedAssignmentId: assignments[0]?.id ?? null,
         selectedLanguage: languageFor(assignments[0], get().selectedLanguage),
         isLoading: false,
@@ -133,7 +190,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ isSigningOut: true, error: null });
 
     try {
-      await signOutStudent();
+      await endSession();
 
       // Drop every piece of student data so nothing stays visible after sign-out.
       set({

@@ -553,13 +553,13 @@
   cursor: not-allowed;
 }
 
-.sign-out-page {
+.auth-page {
   padding: 64px 16px;
   display: grid;
   place-items: center;
 }
 
-.sign-out-panel {
+.auth-panel {
   width: 100%;
   max-width: 460px;
   padding: 36px 32px;
@@ -570,23 +570,24 @@
   text-align: center;
 }
 
-.sign-out-panel h1 {
+.auth-panel h1 {
   margin: 10px 0 12px;
   font-family: "Manrope", sans-serif;
   font-size: 26px;
 }
 
-.sign-out-panel p {
+.auth-panel p {
   margin: 0;
   color: #606b7d;
   line-height: 1.6;
 }
 
-.sign-out-panel .error-message {
+.auth-panel .error-message {
   margin-top: 16px;
+  color: #a02632;
 }
 
-.sign-out-panel__icon {
+.auth-panel__icon {
   width: 52px;
   height: 52px;
   margin: 0 auto;
@@ -599,11 +600,96 @@
   font-weight: 700;
 }
 
-.sign-out-panel__actions {
+.auth-panel__actions {
   margin-top: 8px;
   display: flex;
   justify-content: center;
   gap: 12px;
+}
+
+.teacher-courses {
+  margin: 16px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  font-weight: 600;
+}
+
+.auth-form {
+  margin-top: 20px;
+  display: grid;
+  gap: 16px;
+  text-align: left;
+}
+
+.auth-form__field {
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.auth-form__field input {
+  width: 100%;
+  padding: 11px 14px;
+  font: inherit;
+  font-weight: 400;
+  border: 1px solid #cfd7e3;
+  border-radius: 10px;
+}
+
+.auth-form__input {
+  position: relative;
+}
+
+.auth-form__input:has(.auth-form__toggle) input {
+  padding-right: 46px;
+}
+
+.auth-form__toggle {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  color: #606b7d;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+
+.auth-form__toggle:hover {
+  color: #172033;
+  background: #f1f4f9;
+}
+
+.auth-form__field input[aria-invalid="true"] {
+  border-color: #a02632;
+}
+
+.auth-form__field-error {
+  color: #a02632;
+  font-weight: 400;
+}
+
+.auth-form__hint {
+  color: #606b7d;
+  font-weight: 400;
+}
+
+.auth-form .error-message {
+  margin: 0;
+}
+
+.auth-panel .auth-form__switch {
+  margin-top: 20px;
+  font-size: 14px;
 }
 
 .error-message,
