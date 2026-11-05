@@ -5,7 +5,8 @@ interface SignOutPanelProps {
   error: string | null;
   onConfirm: () => void;
   onCancel: () => void;
-  onSignInAgain: () => void;
+  onSignIn: () => void;
+  onRegister: () => void;
 }
 
 export function SignOutPanel({
@@ -15,24 +16,31 @@ export function SignOutPanel({
   error,
   onConfirm,
   onCancel,
-  onSignInAgain,
+  onSignIn,
+  onRegister,
 }: SignOutPanelProps) {
   if (isSignedOut) {
     return (
-      <section className="sign-out-panel" aria-live="polite">
-        <span className="sign-out-panel__icon" aria-hidden="true">
+      <section className="auth-panel" aria-live="polite">
+        <span className="auth-panel__icon" aria-hidden="true">
           ✓
         </span>
         <h1>You have been signed out</h1>
-        <p>Thanks for learning with LearnLens. See you next time.</p>
+        <p>
+          Thanks for learning with LearnLens. Sign in to your account, or create
+          a new one.
+        </p>
 
-        <div className="sign-out-panel__actions">
+        <div className="auth-panel__actions">
           <button
             type="button"
-            className="primary-button"
-            onClick={onSignInAgain}
+            className="secondary-button"
+            onClick={onRegister}
           >
-            Sign in again
+            Create account
+          </button>
+          <button type="button" className="primary-button" onClick={onSignIn}>
+            Sign in
           </button>
         </div>
       </section>
@@ -40,7 +48,7 @@ export function SignOutPanel({
   }
 
   return (
-    <section className="sign-out-panel">
+    <section className="auth-panel">
       <span className="eyebrow">Account</span>
       <h1>Sign out of LearnLens?</h1>
       <p>
@@ -51,7 +59,7 @@ export function SignOutPanel({
 
       {error && <p className="error-message">{error}</p>}
 
-      <div className="sign-out-panel__actions">
+      <div className="auth-panel__actions">
         <button
           type="button"
           className="secondary-button"

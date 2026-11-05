@@ -9,7 +9,7 @@ from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from .models import User
-from .serializers import SignInSerializer, UserSerializer
+from .serializers import RegisterSerializer, SignInSerializer, UserSerializer
 
 
 @method_decorator(ensure_csrf_cookie, name='dispatch')
@@ -46,6 +46,22 @@ class SignInView(APIView):
 
         login(request, user)  # also changes the session id, preventing session fixation
         return Response(UserSerializer(user).data)
+
+
+# Protected for the same reason as sign-in: it also starts a session.
+@method_decorator(csrf_protect, name='dispatch')
+class RegisterView(APIView):
+    permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'register'
+
+    def post(self, request):
+        serializer = RegisterSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+
+        login(request, user)
+        return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
 
 
 class SignOutView(APIView):

@@ -103,8 +103,11 @@ REST_FRAMEWORK = {
     'DEFAULT_PARSER_CLASSES': ['rest_framework.parsers.JSONParser'],
     # Counted per IP address, and a whole classroom may share one, so this
     # cannot be much stricter without blocking students at the start of a class.
-    'DEFAULT_THROTTLE_RATES': {'sign_in': '30/minute'},
+    'DEFAULT_THROTTLE_RATES': {'sign_in': '30/minute', 'register': '30/minute'},
 }
+
+# Only this university's email addresses can register.
+REGISTRATION_EMAIL_DOMAIN = 'sdu.edu.kz'
 
 # Cookies travel over HTTPS only, except in local development.
 SESSION_COOKIE_SECURE = not DEBUG

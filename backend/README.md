@@ -40,17 +40,30 @@ python manage.py runserver         # admin at http://127.0.0.1:8000/admin/
 
 ## Authentication API
 
-Login uses Django session cookies. Accounts are created in the admin; there is no self-registration.
+Login uses Django session cookies. Only `@sdu.edu.kz` emails can register, and new accounts have no
+courses until they are enrolled. The `account_type` in the profile comes from these rules:
+
+| Account | `account_type` |
+|---|---|
+| Has an instructor enrollment | `teacher` |
+| Admin | `admin` |
+| Email starts with a number, or has a student enrollment | `student` |
+| Anyone else (a name-based email with no enrollment) | `pending_teacher` |
+
+To approve a teacher, open **Users** in the admin site, filter by **Waiting for approval**, then add an
+enrollment with the `instructor` role. The email never grants teacher access by itself. Registration does
+not verify that someone owns the address yet, so add email verification before real users can register.
 
 | Endpoint | Purpose | Success |
 |---|---|---|
 | `GET /auth/csrf` | Sets the `csrftoken` cookie | 204 |
 | `POST /auth/sign-in` | Body: `{"email", "password"}`. Starts a session, returns the profile | 200 |
+| `POST /auth/register` | Body: `{"full_name", "email", "password"}`. Creates an account and signs in | 201 |
 | `POST /auth/sign-out` | Deletes the session on the server | 204 |
 | `GET /auth/me` | Returns the current user and their course roles | 200 |
 
 - `POST` requests must send the `csrftoken` cookie value in an `X-CSRFToken` header.
 - `401` means not signed in (or wrong credentials), `403` means not allowed or a missing CSRF token,
-  and `429` means too many sign-in attempts.
+  and `429` means too many sign-in or register attempts.
 - Every API view requires a signed-in user by default. For course endpoints, use `IsCourseMember` or
   `IsCourseInstructor` from `courses/permissions.py`.

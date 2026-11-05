@@ -3,6 +3,7 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.forms import AdminUserCreationForm, UserChangeForm
 
 from .models import User
+from .roles import STUDENT_EMAIL_PATTERN
 
 
 class UserCreateForm(AdminUserCreationForm):
@@ -17,6 +18,24 @@ class UserEditForm(UserChangeForm):
         fields = ('email', 'full_name', 'is_admin', 'is_active')
 
 
+class WaitingForTeacherApprovalFilter(admin.SimpleListFilter):
+    """Accounts with a name-based email and no enrollment yet. To approve one,
+    add an enrollment with the instructor role."""
+
+    title = 'teacher approval'
+    parameter_name = 'teacher_approval'
+
+    def lookups(self, request, model_admin):
+        return [('waiting', 'Waiting for approval')]
+
+    def queryset(self, request, queryset):
+        if self.value() == 'waiting':
+            return queryset.filter(is_admin=False, enrollments__isnull=True).exclude(
+                email__regex=STUDENT_EMAIL_PATTERN
+            )
+        return queryset
+
+
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
     """Reuses Django's user admin so passwords are always stored hashed.
@@ -29,7 +48,7 @@ class UserAdmin(BaseUserAdmin):
     add_form = UserCreateForm
 
     list_display = ('email', 'full_name', 'is_admin', 'is_active', 'created_at')
-    list_filter = ('is_admin', 'is_active')
+    list_filter = (WaitingForTeacherApprovalFilter, 'is_admin', 'is_active')
     search_fields = ('email', 'full_name')
     ordering = ('email',)
     filter_horizontal = ()
