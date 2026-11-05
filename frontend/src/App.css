@@ -194,6 +194,14 @@
   font-weight: 700;
 }
 
+.student-profile__avatar img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
 .hero {
   margin: 34px 6% 24px;
   padding: 40px 44px;
@@ -1341,5 +1349,441 @@
   .about-compare__arrow {
     justify-self: center;
     transform: rotate(90deg);
+  }
+}
+
+.account {
+  width: 100%;
+  max-width: 1040px;
+  display: grid;
+  gap: 24px;
+}
+
+.account__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 24px;
+}
+
+.account__top h1 {
+  margin: 4px 0 0;
+  font-family: "Manrope", sans-serif;
+  font-size: clamp(28px, 5vw, 38px);
+}
+
+.account__footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.auth-panel__links {
+  margin-top: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.icon-link {
+  padding: 10px 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 999px;
+  box-shadow: var(--shadow-sm);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  transition:
+    transform 160ms ease,
+    background 160ms ease,
+    border-color 160ms ease;
+}
+
+.icon-link:hover {
+  background: var(--color-pink-soft);
+  border-color: var(--color-accent);
+  transform: translateY(-2px);
+}
+
+.icon-link:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.icon-link__icon {
+  flex: none;
+  transition: transform 160ms ease;
+}
+
+.icon-link:hover .icon-link__icon {
+  transform: scale(1.15);
+}
+
+.icon-link--danger {
+  color: var(--color-error-text);
+  border-color: var(--color-error-border);
+}
+
+.icon-link--danger:hover {
+  background: var(--color-error-bg);
+  border-color: var(--color-error-text);
+}
+
+.icon-link--danger:hover .icon-link__icon {
+  transform: translateX(3px);
+}
+
+.account__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  align-items: start;
+  gap: 24px;
+}
+
+.account__column {
+  display: grid;
+  gap: 24px;
+  min-width: 0;
+}
+
+.account-card {
+  padding: 24px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+.account-card h2 {
+  margin: 0 0 16px;
+  font-family: "Manrope", sans-serif;
+  font-size: 20px;
+}
+
+.account-card .auth-form {
+  margin-top: 0;
+}
+
+.account-card .primary-button,
+.account-card .secondary-button {
+  margin-top: 0;
+}
+
+.account-card__note {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.account-card__readonly {
+  padding: 11px 14px;
+  overflow-wrap: anywhere;
+  color: var(--color-text-muted);
+  background: var(--color-surface-hover);
+  border-radius: 10px;
+  font-weight: 400;
+}
+
+.account-card__select {
+  width: 100%;
+  padding: 11px 14px;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 10px;
+  font: inherit;
+  font-weight: 400;
+}
+
+.account-card__select:focus-visible {
+  outline: 3px solid var(--color-accent);
+}
+
+.account-card__saved {
+  margin: 0;
+  color: var(--color-success-text);
+  font-size: 14px;
+  font-weight: 700;
+  animation: about-pop 300ms ease;
+}
+
+.account-card__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.learner-card {
+  position: relative;
+  padding: 24px;
+  display: grid;
+  gap: 18px;
+  overflow: hidden;
+  color: #ffffff;
+  background: linear-gradient(135deg, #1e3a5f, #3f6090);
+  border-radius: 22px;
+  box-shadow: var(--shadow-lg);
+  transform: perspective(900px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+  transition: transform 160ms ease-out;
+}
+
+.learner-card::before {
+  content: "";
+  position: absolute;
+  top: -70px;
+  right: -60px;
+  width: 200px;
+  height: 200px;
+  background: #f4a6b8;
+  border-radius: 50%;
+  opacity: 0.3;
+}
+
+.learner-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at var(--shine-x, 50%) var(--shine-y, 0%),
+    rgba(255, 255, 255, 0.2),
+    transparent 55%
+  );
+  pointer-events: none;
+}
+
+.learner-card > * {
+  position: relative;
+}
+
+.learner-card__brand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-family: "Manrope", sans-serif;
+  font-weight: 800;
+}
+
+.learner-card__role {
+  padding: 4px 10px;
+  color: #1e3a5f;
+  background: #f4a6b8;
+  border-radius: 999px;
+  font-family: "DM Sans", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.learner-card__person {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.learner-card__avatar {
+  width: 84px;
+  height: 84px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  color: #1e3a5f;
+  background: #f4a6b8;
+  border: 3px solid #faf7f5;
+  border-radius: 50%;
+  font-size: 26px;
+  font-weight: 800;
+}
+
+.learner-card__avatar img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.learner-card__name {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-family: "Manrope", sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.learner-card__email {
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+  color: #faf7f5;
+  font-size: 13px;
+}
+
+.learner-card__facts {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 28px;
+  font-size: 13px;
+}
+
+.learner-card__facts dt {
+  color: #f4a6b8;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.learner-card__facts dd {
+  margin: 2px 0 0;
+  font-weight: 700;
+}
+
+.photo-picker__button {
+  margin: 0;
+  cursor: pointer;
+}
+
+.photo-picker__button:focus-within {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.photo-picker__button--busy {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.profile-progress {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 16px;
+}
+
+.profile-progress__ring {
+  width: 76px;
+  height: 76px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  background: conic-gradient(
+    var(--color-accent) calc(var(--progress) * 1%),
+    var(--color-track) 0
+  );
+  border-radius: 50%;
+}
+
+.profile-progress__ring span {
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  background: var(--color-surface);
+  border-radius: 50%;
+  font-family: "Manrope", sans-serif;
+  font-weight: 800;
+}
+
+.profile-progress__headline {
+  margin: 0;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.profile-progress__list {
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  font-size: 14px;
+}
+
+.profile-progress__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--color-text-muted);
+}
+
+.profile-progress__item--done {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.profile-progress__check {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--color-border-strong);
+  border-radius: 50%;
+  font-size: 12px;
+}
+
+.profile-progress__item--done .profile-progress__check {
+  color: var(--color-on-avatar);
+  background: var(--color-avatar);
+  border-color: var(--color-avatar);
+  animation: about-pop 300ms ease;
+}
+
+.account-courses {
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  list-style: none;
+}
+
+.account-courses li {
+  padding: 12px 14px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 12px;
+  background: var(--color-bg);
+  border-radius: 12px;
+}
+
+.account-courses span {
+  color: var(--color-text-muted);
+  font-size: 13px;
+  text-transform: capitalize;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .icon-link,
+  .icon-link:hover,
+  .icon-link__icon,
+  .icon-link:hover .icon-link__icon,
+  .learner-card,
+  .account-card__saved,
+  .profile-progress__item--done .profile-progress__check {
+    animation: none;
+    transform: none;
+    transition: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .account__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .account__footer {
+    justify-content: flex-start;
   }
 }

@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import type { StudentProfile, StudentProgress } from "../../types";
+import { Avatar } from "./Avatar";
 
 interface UserMenuProps {
   student: StudentProfile;
@@ -57,17 +58,21 @@ export function UserMenu({ student, progress }: UserMenuProps) {
           <strong>{student.name}</strong>
           <span>{student.course}</span>
         </div>
-        <span className="student-profile__avatar" aria-hidden="true">
-          {student.initials}
-        </span>
+        <Avatar
+          className="student-profile__avatar"
+          initials={student.initials}
+          photoUrl={student.photoUrl}
+        />
       </button>
 
       {isOpen && (
         <div className="user-menu__panel" id={menuId} role="menu">
           <div className="user-menu__header">
-            <span className="student-profile__avatar" aria-hidden="true">
-              {student.initials}
-            </span>
+            <Avatar
+              className="student-profile__avatar"
+              initials={student.initials}
+              photoUrl={student.photoUrl}
+            />
             <div>
               <strong>{student.name}</strong>
               <span>{student.email}</span>
@@ -94,6 +99,14 @@ export function UserMenu({ student, progress }: UserMenuProps) {
           </dl>
 
           <div className="user-menu__actions">
+            <Link
+              className="user-menu__item"
+              to="/account"
+              role="menuitem"
+              onClick={closeMenu}
+            >
+              My account
+            </Link>
             <a
               className="user-menu__item"
               href="#progress"
