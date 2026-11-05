@@ -15,6 +15,7 @@ const delay = (milliseconds: number): Promise<void> =>
   });
 
 const REQUEST_TIMEOUT_MS = 10_000;
+const UPLOAD_TIMEOUT_MS = 60_000;
 const GENERIC_ERROR = "Something went wrong. Please try again.";
 
 export class ApiError extends Error {
@@ -67,8 +68,8 @@ const sendRequest = async (
 
   try {
     response = await fetch(path, {
-      ...init,
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      ...init,
     });
   } catch {
     throw new ApiError(0, "Unable to reach LearnLens. Please try again.");
@@ -86,26 +87,48 @@ const readCsrfToken = (): string | undefined =>
     .find((cookie) => cookie.startsWith("csrftoken="))
     ?.slice("csrftoken=".length);
 
-const postJson = async (path: string, body: object = {}): Promise<Response> => {
+const sendWithCsrf = async (
+  path: string,
+  init: RequestInit & { headers?: Record<string, string> },
+): Promise<Response> => {
   if (!readCsrfToken()) {
     await sendRequest("/auth/csrf");
   }
 
   return sendRequest(path, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-CSRFToken": readCsrfToken() ?? "",
-    },
-    body: JSON.stringify(body),
+    ...init,
+    headers: { ...init.headers, "X-CSRFToken": readCsrfToken() ?? "" },
   });
 };
+
+const sendJson = (
+  path: string,
+  method: "POST" | "PATCH",
+  body: object = {},
+): Promise<Response> =>
+  sendWithCsrf(path, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+const postJson = (path: string, body: object = {}): Promise<Response> =>
+  sendJson(path, "POST", body);
 
 const toStudentProfile = (user: ApiUser): StudentProfile => ({
   accountType: user.account_type,
   teachingCourses: user.enrollments
     .filter((enrollment) => enrollment.role === "instructor")
     .map((enrollment) => enrollment.course_title),
+  courses: user.enrollments.map((enrollment) => ({
+    id: enrollment.course_id,
+    code: enrollment.course_code,
+    title: enrollment.course_title,
+    role: enrollment.role,
+  })),
+  photoUrl: user.photo_url,
+  preferredLanguage: user.preferred_language || null,
+  memberSince: user.created_at,
   name: user.full_name,
   initials: user.full_name
     .split(/\s+/)
@@ -172,6 +195,48 @@ export const fetchCurrentStudent = async (): Promise<StudentProfile | null> => {
     }
     throw error;
   }
+};
+
+const readProfile = async (response: Response): Promise<StudentProfile> =>
+  toStudentProfile((await response.json()) as ApiUser);
+
+export const updateProfile = async (changes: {
+  fullName: string;
+  preferredLanguage: ProgrammingLanguage | null;
+}): Promise<StudentProfile> =>
+  readProfile(
+    await sendJson("/auth/me", "PATCH", {
+      full_name: changes.fullName,
+      preferred_language: changes.preferredLanguage ?? "",
+    }),
+  );
+
+export const uploadProfilePhoto = async (
+  photo: File,
+): Promise<StudentProfile> => {
+  const body = new FormData();
+  body.append("photo", photo);
+
+  return readProfile(
+    await sendWithCsrf("/auth/me/photo", {
+      method: "PUT",
+      body,
+      signal: AbortSignal.timeout(UPLOAD_TIMEOUT_MS),
+    }),
+  );
+};
+
+export const removeProfilePhoto = async (): Promise<StudentProfile> =>
+  readProfile(await sendWithCsrf("/auth/me/photo", { method: "DELETE" }));
+
+export const changePassword = async (
+  currentPassword: string,
+  newPassword: string,
+): Promise<void> => {
+  await postJson("/auth/change-password", {
+    current_password: currentPassword,
+    new_password: newPassword,
+  });
 };
 
 export const submitSolution = async (

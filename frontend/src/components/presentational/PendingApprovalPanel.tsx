@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { IconLink } from "./IconLink";
 
 interface PendingApprovalPanelProps {
   email: string;
@@ -14,9 +14,10 @@ export function PendingApprovalPanel({ email }: PendingApprovalPanelProps) {
         can use LearnLens as a teacher. If you are a student, ask to be enrolled
         in your course.
       </p>
-      <p className="auth-form__switch">
-        <Link to="/sign-out">Sign out</Link>
-      </p>
+      <div className="auth-panel__links">
+        <IconLink to="/account" icon="account" label="My account" />
+        <IconLink to="/sign-out" icon="signOut" label="Sign out" isDanger />
+      </div>
     </section>
   );
 }
