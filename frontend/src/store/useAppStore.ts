@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { defaultLanguage } from "../data/languages";
+import { defaultLanguage, starterCode } from "../data/languages";
 import {
   ApiError,
   fetchAssignments,
@@ -16,7 +16,9 @@ import type {
   StudentProfile,
   StudentProgress,
   SubmissionResult,
+  ThemePreference,
 } from "../types";
+import { readThemePreference, saveThemePreference } from "../services/theme";
 
 // Keep the current language when the assignment allows it; otherwise use the
 // assignment's first allowed language (e.g. HTML for the HTML assignment).
@@ -43,6 +45,9 @@ interface AppState {
   student: StudentProfile | null;
   selectedAssignmentId: number | null;
   selectedLanguage: ProgrammingLanguage;
+  // In the store so unsubmitted code survives leaving the dashboard. One draft
+  // per language, so switching languages never discards typed code.
+  codeDrafts: Record<ProgrammingLanguage, string>;
   submissionResult: SubmissionResult | null;
   isLoading: boolean;
   isSubmitting: boolean;
@@ -53,6 +58,8 @@ interface AppState {
   isAuthenticating: boolean;
   authError: string | null;
   authFieldErrors: Record<string, string[]>;
+  themePreference: ThemePreference;
+  setThemePreference: (preference: ThemePreference) => void;
   loadSession: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   register: (fullName: string, email: string, password: string) => Promise<void>;
@@ -60,6 +67,7 @@ interface AppState {
   loadDashboard: () => Promise<void>;
   selectAssignment: (assignmentId: number) => void;
   selectLanguage: (language: ProgrammingLanguage) => void;
+  setCodeDraft: (language: ProgrammingLanguage, code: string) => void;
   submitCode: (code: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -70,6 +78,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   student: null,
   selectedAssignmentId: null,
   selectedLanguage: defaultLanguage,
+  codeDrafts: starterCode,
   submissionResult: null,
   isLoading: false,
   isSubmitting: false,
@@ -80,6 +89,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   isAuthenticating: false,
   authError: null,
   authFieldErrors: {},
+  themePreference: readThemePreference(),
+
+  setThemePreference: (preference) => {
+    saveThemePreference(preference);
+    set({ themePreference: preference });
+  },
 
   loadSession: async () => {
     try {
@@ -125,11 +140,20 @@ export const useAppStore = create<AppState>((set, get) => ({
         fetchProgress(),
       ]);
 
+      // Coming back to the dashboard keeps the assignment the student had open.
+      const selectedAssignment =
+        assignments.find(
+          (assignment) => assignment.id === get().selectedAssignmentId,
+        ) ?? assignments[0];
+
       set({
         assignments,
         progress,
-        selectedAssignmentId: assignments[0]?.id ?? null,
-        selectedLanguage: languageFor(assignments[0], get().selectedLanguage),
+        selectedAssignmentId: selectedAssignment?.id ?? null,
+        selectedLanguage: languageFor(
+          selectedAssignment,
+          get().selectedLanguage,
+        ),
         isLoading: false,
       });
     } catch {
@@ -156,6 +180,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   selectLanguage: (language) => {
     // Feedback belongs to one language, so clear it when the student switches.
     set({ selectedLanguage: language, submissionResult: null, error: null });
+  },
+
+  setCodeDraft: (language, code) => {
+    set((state) => ({
+      codeDrafts: { ...state.codeDrafts, [language]: code },
+    }));
   },
 
   submitCode: async (code) => {
@@ -198,6 +228,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         progress: null,
         student: null,
         selectedAssignmentId: null,
+        codeDrafts: starterCode,
         submissionResult: null,
         isSigningOut: false,
         isSignedOut: true,

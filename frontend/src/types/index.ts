@@ -73,3 +73,5 @@ export interface LanguageOption {
   id: ProgrammingLanguage;
   label: string;
 }
+
+export type ThemePreference = "light" | "system" | "dark";
