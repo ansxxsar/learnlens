@@ -1,29 +1,26 @@
-import { useState } from "react";
-import { starterCode } from "../../data/languages";
 import type { LanguageOption, ProgrammingLanguage } from "../../types";
 
 interface CodeSubmissionFormProps {
   assignmentTitle: string;
   language: ProgrammingLanguage;
+  code: string;
   languages: LanguageOption[];
   isSubmitting: boolean;
   onLanguageChange: (language: ProgrammingLanguage) => void;
+  onCodeChange: (code: string) => void;
   onSubmit: (code: string) => Promise<void>;
 }
 
 export function CodeSubmissionForm({
   assignmentTitle,
   language,
+  code,
   languages,
   isSubmitting,
   onLanguageChange,
+  onCodeChange,
   onSubmit,
 }: CodeSubmissionFormProps) {
-  // One draft per language so switching languages never discards typed code.
-  const [drafts, setDrafts] =
-    useState<Record<ProgrammingLanguage, string>>(starterCode);
-  const code = drafts[language];
-
   const handleSubmit = async () => {
     await onSubmit(code);
   };
@@ -62,12 +59,7 @@ export function CodeSubmissionForm({
         id="code-editor"
         className="code-editor"
         value={code}
-        onChange={(event) =>
-          setDrafts((current) => ({
-            ...current,
-            [language]: event.target.value,
-          }))
-        }
+        onChange={(event) => onCodeChange(event.target.value)}
         spellCheck={false}
       />
 

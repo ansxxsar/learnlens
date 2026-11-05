@@ -12,6 +12,7 @@ export function DashboardContainer() {
     progress,
     selectedAssignmentId,
     selectedLanguage,
+    codeDrafts,
     submissionResult,
     isLoading,
     isSubmitting,
@@ -19,6 +20,7 @@ export function DashboardContainer() {
     loadDashboard,
     selectAssignment,
     selectLanguage,
+    setCodeDraft,
     submitCode,
   } = useAppStore();
 
@@ -65,9 +67,11 @@ export function DashboardContainer() {
             <CodeSubmissionForm
               assignmentTitle={selectedAssignment.title}
               language={selectedLanguage}
+              code={codeDrafts[selectedLanguage]}
               languages={allowedLanguages}
               isSubmitting={isSubmitting}
               onLanguageChange={selectLanguage}
+              onCodeChange={(code) => setCodeDraft(selectedLanguage, code)}
               onSubmit={submitCode}
             />
           ) : (

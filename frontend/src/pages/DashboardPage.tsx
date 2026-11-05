@@ -1,14 +1,13 @@
 import { DashboardContainer } from "../components/containers/DashboardContainer";
+import { ThemeSwitcherContainer } from "../components/containers/ThemeSwitcherContainer";
 import { UserMenuContainer } from "../components/containers/UserMenuContainer";
+import { BrandLink } from "../components/presentational/BrandLink";
 
 export function DashboardPage() {
   return (
     <div className="app">
       <header className="app-header">
-        <a className="brand" href="/" aria-label="LearnLens home">
-          <span className="brand__icon">L</span>
-          <span>LearnLens</span>
-        </a>
+        <BrandLink />
 
         <nav className="navigation" aria-label="Main navigation">
           <a
@@ -25,7 +24,10 @@ export function DashboardPage() {
           </a>
         </nav>
 
-        <UserMenuContainer />
+        <div className="app-header__actions">
+          <ThemeSwitcherContainer />
+          <UserMenuContainer />
+        </div>
       </header>
 
       <section className="hero" id="dashboard">
