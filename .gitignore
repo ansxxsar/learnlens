@@ -1,6 +1,7 @@
 # Local environment and generated files
 .env
 .venv/
+backend/media/
 node_modules/
 __pycache__/
 render/

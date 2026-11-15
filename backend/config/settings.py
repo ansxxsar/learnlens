@@ -103,8 +103,18 @@ REST_FRAMEWORK = {
     'DEFAULT_PARSER_CLASSES': ['rest_framework.parsers.JSONParser'],
     # Counted per IP address, and a whole classroom may share one, so this
     # cannot be much stricter without blocking students at the start of a class.
-    'DEFAULT_THROTTLE_RATES': {'sign_in': '30/minute', 'register': '30/minute'},
+    'DEFAULT_THROTTLE_RATES': {
+        'sign_in': '30/minute',
+        'register': '30/minute',
+        # These two are counted per signed-in user.
+        'change_password': '10/minute',
+        'profile_photo': '30/hour',
+    },
 }
+
+# Uploaded files. There is deliberately no MEDIA_URL: photos are only served
+# through an authenticated API view, never as public files.
+MEDIA_ROOT = os.environ.get('DJANGO_MEDIA_ROOT', BASE_DIR / 'media')
 
 # Only this university's email addresses can register.
 REGISTRATION_EMAIL_DOMAIN = 'sdu.edu.kz'

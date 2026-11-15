@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { IconLink } from "./IconLink";
 
 interface TeacherHomePanelProps {
   name: string;
@@ -16,9 +16,10 @@ export function TeacherHomePanel({ name, courses }: TeacherHomePanelProps) {
           <li key={course}>{course}</li>
         ))}
       </ul>
-      <p className="auth-form__switch">
-        <Link to="/sign-out">Sign out</Link>
-      </p>
+      <div className="auth-panel__links">
+        <IconLink to="/account" icon="account" label="My account" />
+        <IconLink to="/sign-out" icon="signOut" label="Sign out" isDanger />
+      </div>
     </section>
   );
 }

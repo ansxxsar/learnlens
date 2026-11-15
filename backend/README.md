@@ -61,9 +61,16 @@ not verify that someone owns the address yet, so add email verification before r
 | `POST /auth/register` | Body: `{"full_name", "email", "password"}`. Creates an account and signs in | 201 |
 | `POST /auth/sign-out` | Deletes the session on the server | 204 |
 | `GET /auth/me` | Returns the current user and their course roles | 200 |
+| `PATCH /auth/me` | Body: `{"full_name", "preferred_language"}`, either one. Email cannot be changed | 200 |
+| `GET /auth/me/photo` | Returns the current user's photo as a JPEG | 200 |
+| `PUT /auth/me/photo` | Multipart field `photo`: JPEG, PNG or WebP, up to 5 MB | 200 |
+| `DELETE /auth/me/photo` | Removes the photo | 200 |
+| `POST /auth/change-password` | Body: `{"current_password", "new_password"}`. Signs out other devices | 204 |
 
-- `POST` requests must send the `csrftoken` cookie value in an `X-CSRFToken` header.
+- Requests that change data must send the `csrftoken` cookie value in an `X-CSRFToken` header.
 - `401` means not signed in (or wrong credentials), `403` means not allowed or a missing CSRF token,
   and `429` means too many sign-in or register attempts.
 - Every API view requires a signed-in user by default. For course endpoints, use `IsCourseMember` or
   `IsCourseInstructor` from `courses/permissions.py`.
+- Uploaded photos are rebuilt as 256×256 JPEGs, which removes metadata such as GPS location. They are stored
+  in `backend/media/` (never committed) and are only served through the endpoint above.
