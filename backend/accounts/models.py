@@ -1,6 +1,16 @@
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.db import models
 
+# Same ids as frontend/src/data/languages.ts.
+LANGUAGE_CHOICES = [
+    ('python', 'Python'),
+    ('java', 'Java'),
+    ('cpp', 'C++'),
+    ('javascript', 'JavaScript'),
+    ('html', 'HTML'),
+    ('css', 'CSS'),
+]
+
 
 class UserManager(BaseUserManager):
     """Creates users with email as the login name."""
@@ -21,7 +31,8 @@ class UserManager(BaseUserManager):
 class User(AbstractBaseUser):
     """ERD table "users".
 
-    Columns: id, email, password_hash, full_name, is_admin, is_active, created_at.
+    Columns: id, email, password_hash, full_name, is_admin, is_active, created_at,
+    photo, preferred_language.
     Course roles (student / instructor) live in enrollments, not here.
     """
 
@@ -32,6 +43,9 @@ class User(AbstractBaseUser):
     is_admin = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    # Only ever written by accounts.photos, which re-encodes the upload.
+    photo = models.ImageField(upload_to='profile_photos/', max_length=255, blank=True)
+    preferred_language = models.CharField(max_length=20, choices=LANGUAGE_CHOICES, blank=True)
 
     # The ERD has no last_login column, so remove the one AbstractBaseUser adds.
     last_login = None

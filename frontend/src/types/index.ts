@@ -34,9 +34,20 @@ export interface SubmissionResult {
 
 export type AccountType = "student" | "teacher" | "pending_teacher" | "admin";
 
+export interface ProfileCourse {
+  id: number;
+  code: string;
+  title: string;
+  role: ApiEnrollment["role"];
+}
+
 export interface StudentProfile {
   accountType: AccountType;
   teachingCourses: string[];
+  courses: ProfileCourse[];
+  photoUrl: string | null;
+  preferredLanguage: ProgrammingLanguage | null;
+  memberSince: string;
   name: string;
   initials: string;
   email: string;
@@ -58,6 +69,9 @@ export interface ApiUser {
   full_name: string;
   is_admin: boolean;
   account_type: AccountType;
+  photo_url: string | null;
+  preferred_language: ProgrammingLanguage | "";
+  created_at: string;
   enrollments: ApiEnrollment[];
 }
 

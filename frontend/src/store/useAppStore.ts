@@ -6,9 +6,12 @@ import {
   fetchCurrentStudent,
   fetchProgress,
   register as registerAccount,
+  removeProfilePhoto as deleteProfilePhoto,
   signIn as signInWithPassword,
   signOut as endSession,
   submitSolution,
+  updateProfile as saveProfile,
+  uploadProfilePhoto as saveProfilePhoto,
 } from "../services/api";
 import type {
   Assignment,
@@ -29,6 +32,11 @@ const languageFor = (
   !assignment || assignment.languages.includes(current)
     ? current
     : (assignment.languages[0] ?? current);
+
+const preferredLanguageOf = (
+  student: StudentProfile | null,
+  current: ProgrammingLanguage,
+): ProgrammingLanguage => student?.preferredLanguage ?? current;
 
 const authErrorState = (error: unknown) => ({
   isAuthenticating: false,
@@ -64,6 +72,13 @@ interface AppState {
   signIn: (email: string, password: string) => Promise<void>;
   register: (fullName: string, email: string, password: string) => Promise<void>;
   clearAuthErrors: () => void;
+  // These throw on failure, so the form that called them can show the error.
+  updateProfile: (changes: {
+    fullName: string;
+    preferredLanguage: ProgrammingLanguage | null;
+  }) => Promise<void>;
+  uploadPhoto: (photo: File) => Promise<void>;
+  removePhoto: () => Promise<void>;
   loadDashboard: () => Promise<void>;
   selectAssignment: (assignmentId: number) => void;
   selectLanguage: (language: ProgrammingLanguage) => void;
@@ -98,7 +113,12 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   loadSession: async () => {
     try {
-      set({ student: await fetchCurrentStudent(), isAuthChecked: true });
+      const student = await fetchCurrentStudent();
+      set({
+        student,
+        selectedLanguage: preferredLanguageOf(student, get().selectedLanguage),
+        isAuthChecked: true,
+      });
     } catch {
       // Without a confirmed session, treat the visitor as signed out.
       set({ student: null, isAuthChecked: true });
@@ -110,7 +130,12 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     try {
       const student = await signInWithPassword(email, password);
-      set({ student, isAuthenticating: false, isSignedOut: false });
+      set({
+        student,
+        selectedLanguage: preferredLanguageOf(student, get().selectedLanguage),
+        isAuthenticating: false,
+        isSignedOut: false,
+      });
     } catch (error) {
       set(authErrorState(error));
     }
@@ -121,7 +146,12 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     try {
       const student = await registerAccount(fullName, email, password);
-      set({ student, isAuthenticating: false, isSignedOut: false });
+      set({
+        student,
+        selectedLanguage: preferredLanguageOf(student, get().selectedLanguage),
+        isAuthenticating: false,
+        isSignedOut: false,
+      });
     } catch (error) {
       set(authErrorState(error));
     }
@@ -129,6 +159,22 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   clearAuthErrors: () => {
     set({ authError: null, authFieldErrors: {} });
+  },
+
+  updateProfile: async (changes) => {
+    const student = await saveProfile(changes);
+    set({
+      student,
+      selectedLanguage: preferredLanguageOf(student, get().selectedLanguage),
+    });
+  },
+
+  uploadPhoto: async (photo) => {
+    set({ student: await saveProfilePhoto(photo) });
+  },
+
+  removePhoto: async () => {
+    set({ student: await deleteProfilePhoto() });
   },
 
   loadDashboard: async () => {
@@ -228,6 +274,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         progress: null,
         student: null,
         selectedAssignmentId: null,
+        selectedLanguage: defaultLanguage,
         codeDrafts: starterCode,
         submissionResult: null,
         isSigningOut: false,

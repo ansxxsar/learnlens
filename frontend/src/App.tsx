@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { GuestOnly, RequireAuth } from "./components/containers/AuthGuards";
 import { AboutPage } from "./pages/AboutPage";
+import { AccountPage } from "./pages/AccountPage";
 import { HomePage } from "./pages/HomePage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { SignInPage } from "./pages/SignInPage";
@@ -27,6 +28,7 @@ function App() {
     <Routes>
       <Route element={<RequireAuth />}>
         <Route path="/" element={<HomePage />} />
+        <Route path="/account" element={<AccountPage />} />
       </Route>
       <Route element={<GuestOnly />}>
         <Route path="/sign-in" element={<SignInPage />} />
