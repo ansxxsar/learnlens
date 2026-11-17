@@ -74,3 +74,22 @@ not verify that someone owns the address yet, so add email verification before r
   `IsCourseInstructor` from `courses/permissions.py`.
 - Uploaded photos are rebuilt as 256×256 JPEGs, which removes metadata such as GPS location. They are stored
   in `backend/media/` (never committed) and are only served through the endpoint above.
+
+## Courses API
+
+A course is shared by its teachers and students through enrollments. A section is one teacher's group
+inside a course: a student who picked a teacher is enrolled in that teacher's section. An instructor with
+no section teaches the whole course.
+
+| Endpoint | Purpose | Success |
+|---|---|---|
+| `GET /courses` | The signed-in user's own courses | 200 |
+
+Each course has `id`, `code`, `title`, `term`, `role` (`student` or `instructor`), `section_code`,
+`instructor_names` and `student_count`.
+
+- `instructor_names` lists the teachers of the user's section plus anyone who teaches the whole course.
+  Teachers are shown by name only, never by email.
+- `student_count` is only sent to instructors: the students in their section, or in the whole course if
+  they have no section. Students get `null`.
+- Courses are created, and people enrolled, in the admin site for now.

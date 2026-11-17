@@ -1,8 +1,8 @@
 import { AuthLayout } from "../components/presentational/AuthLayout";
 import { PendingApprovalPanel } from "../components/presentational/PendingApprovalPanel";
-import { TeacherHomePanel } from "../components/presentational/TeacherHomePanel";
 import { useAppStore } from "../store/useAppStore";
 import { DashboardPage } from "./DashboardPage";
+import { TeacherHomePage } from "./TeacherHomePage";
 
 // Only chooses the page. The API enforces what each role can do.
 export function HomePage() {
@@ -17,14 +17,7 @@ export function HomePage() {
   }
 
   if (student?.accountType === "teacher") {
-    return (
-      <AuthLayout>
-        <TeacherHomePanel
-          name={student.name}
-          courses={student.teachingCourses}
-        />
-      </AuthLayout>
-    );
+    return <TeacherHomePage name={student.name} />;
   }
 
   return <DashboardPage />;

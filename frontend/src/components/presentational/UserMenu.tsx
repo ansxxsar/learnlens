@@ -13,6 +13,8 @@ export function UserMenu({ student, progress }: UserMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuId = useId();
+  // Streak, progress and assignments are student features.
+  const isStudent = student.accountType !== "teacher";
 
   useEffect(() => {
     if (!isOpen) {
@@ -84,7 +86,7 @@ export function UserMenu({ student, progress }: UserMenuProps) {
               <dt>Course</dt>
               <dd>{student.course}</dd>
             </div>
-            {progress && (
+            {isStudent && progress && (
               <div>
                 <dt>Level</dt>
                 <dd>
@@ -92,10 +94,12 @@ export function UserMenu({ student, progress }: UserMenuProps) {
                 </dd>
               </div>
             )}
-            <div>
-              <dt>Streak</dt>
-              <dd>{student.streakDays} days</dd>
-            </div>
+            {isStudent && (
+              <div>
+                <dt>Streak</dt>
+                <dd>{student.streakDays} days</dd>
+              </div>
+            )}
           </dl>
 
           <div className="user-menu__actions">
@@ -107,22 +111,26 @@ export function UserMenu({ student, progress }: UserMenuProps) {
             >
               My account
             </Link>
-            <a
-              className="user-menu__item"
-              href="#progress"
-              role="menuitem"
-              onClick={closeMenu}
-            >
-              View progress
-            </a>
-            <a
-              className="user-menu__item"
-              href="#assignments"
-              role="menuitem"
-              onClick={closeMenu}
-            >
-              My assignments
-            </a>
+            {isStudent && (
+              <>
+                <a
+                  className="user-menu__item"
+                  href="#progress"
+                  role="menuitem"
+                  onClick={closeMenu}
+                >
+                  View progress
+                </a>
+                <a
+                  className="user-menu__item"
+                  href="#assignments"
+                  role="menuitem"
+                  onClick={closeMenu}
+                >
+                  My assignments
+                </a>
+              </>
+            )}
             <Link
               className="user-menu__item"
               to="/sign-out"

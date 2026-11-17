@@ -43,7 +43,6 @@ export interface ProfileCourse {
 
 export interface StudentProfile {
   accountType: AccountType;
-  teachingCourses: string[];
   courses: ProfileCourse[];
   photoUrl: string | null;
   preferredLanguage: ProgrammingLanguage | null;
@@ -61,6 +60,30 @@ export interface ApiEnrollment {
   course_title: string;
   section_code: string | null;
   role: "student" | "instructor";
+}
+
+// GET /courses: one course from the signed-in user's point of view.
+export interface ApiCourse {
+  id: number;
+  code: string;
+  title: string;
+  term: string;
+  role: "student" | "instructor";
+  section_code: string | null;
+  instructor_names: string[];
+  // Only sent to instructors.
+  student_count: number | null;
+}
+
+export interface MyCourse {
+  id: number;
+  code: string;
+  title: string;
+  term: string;
+  role: ApiCourse["role"];
+  sectionCode: string | null;
+  instructorNames: string[];
+  studentCount: number | null;
 }
 
 export interface ApiUser {

@@ -1,4 +1,5 @@
 import { DashboardContainer } from "../components/containers/DashboardContainer";
+import { MyCoursesContainer } from "../components/containers/MyCoursesContainer";
 import { ThemeSwitcherContainer } from "../components/containers/ThemeSwitcherContainer";
 import { UserMenuContainer } from "../components/containers/UserMenuContainer";
 import { BrandLink } from "../components/presentational/BrandLink";
@@ -45,6 +46,11 @@ export function DashboardPage() {
           <span>learning streak</span>
         </div>
       </section>
+
+      <MyCoursesContainer
+        title="My courses"
+        emptyMessage="You are not enrolled in any course yet. Your teacher or an administrator will add you."
+      />
 
       <DashboardContainer />
     </div>

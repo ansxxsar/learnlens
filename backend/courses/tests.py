@@ -107,3 +107,105 @@ class CoursePermissionTests(TestCase):
         admin = self.make_user(is_admin=True)
 
         self.assertEqual(self.status_for(IsCourseMember, admin), 403)
+
+
+class MyCoursesApiTests(TestCase):
+    """GET /courses: the same course shows up for its teacher and its students."""
+
+    def setUp(self):
+        self.course = Course.objects.create(code='CSS105', title='Introduction to Programming', term='Fall 2026')
+        self.section_a = CourseSection.objects.create(course=self.course, code='01-N')
+        self.section_b = CourseSection.objects.create(course=self.course, code='02-N')
+
+        self.teacher_a = self.enroll('Aigerim Teacher', Enrollment.Role.INSTRUCTOR, self.section_a)
+        self.teacher_b = self.enroll('Bolat Teacher', Enrollment.Role.INSTRUCTOR, self.section_b)
+        self.student_a = self.enroll('Student A', Enrollment.Role.STUDENT, self.section_a)
+        self.enroll('Student A2', Enrollment.Role.STUDENT, self.section_a)
+        self.enroll('Student B', Enrollment.Role.STUDENT, self.section_b)
+
+    def enroll(self, name, role, section=None, course=None):
+        count = get_user_model().objects.count()
+        user = get_user_model().objects.create_user(
+            email=f'user{count}@sdu.edu.kz', full_name=name, password='test-pass-123'
+        )
+        Enrollment.objects.create(user=user, course=course or self.course, section=section, role=role)
+        return user
+
+    def get_courses(self, user):
+        self.client.force_login(user)
+        response = self.client.get('/courses')
+        self.assertEqual(response.status_code, 200)
+        return response.json()
+
+    def test_anonymous_request_gets_401(self):
+        self.assertEqual(self.client.get('/courses').status_code, 401)
+
+    def test_teacher_and_student_see_the_same_course(self):
+        [taught] = self.get_courses(self.teacher_a)
+        [studied] = self.get_courses(self.student_a)
+
+        self.assertEqual(taught['id'], studied['id'])
+        self.assertEqual(taught['title'], 'Introduction to Programming')
+        self.assertEqual(taught['role'], 'instructor')
+        self.assertEqual(studied['role'], 'student')
+
+    def test_student_sees_only_their_own_sections_teacher(self):
+        [course] = self.get_courses(self.student_a)
+
+        self.assertEqual(course['section_code'], '01-N')
+        self.assertEqual(course['instructor_names'], ['Aigerim Teacher'])
+
+    def test_teacher_of_whole_course_is_shown_to_every_student(self):
+        self.enroll('Lead Teacher', Enrollment.Role.INSTRUCTOR)
+
+        [course] = self.get_courses(self.student_a)
+
+        self.assertEqual(course['instructor_names'], ['Aigerim Teacher', 'Lead Teacher'])
+
+    def test_teacher_counts_only_students_in_their_section(self):
+        [course] = self.get_courses(self.teacher_a)
+
+        self.assertEqual(course['student_count'], 2)
+
+    def test_teacher_of_whole_course_counts_every_student(self):
+        lead = self.enroll('Lead Teacher', Enrollment.Role.INSTRUCTOR)
+
+        [course] = self.get_courses(lead)
+
+        self.assertEqual(course['student_count'], 3)
+
+    def test_student_is_not_given_a_student_count(self):
+        [course] = self.get_courses(self.student_a)
+
+        self.assertIsNone(course['student_count'])
+
+    def test_courses_the_user_is_not_enrolled_in_are_hidden(self):
+        other = Course.objects.create(code='CSS201', title='Data Structures', term='Fall 2026')
+        self.enroll('Other Teacher', Enrollment.Role.INSTRUCTOR, course=other)
+
+        codes = [course['code'] for course in self.get_courses(self.student_a)]
+
+        self.assertEqual(codes, ['CSS105'])
+
+    def test_user_without_enrollments_gets_an_empty_list(self):
+        newcomer = get_user_model().objects.create_user(
+            email='newcomer@sdu.edu.kz', full_name='New User', password='test-pass-123'
+        )
+
+        self.assertEqual(self.get_courses(newcomer), [])
+
+    def test_response_never_contains_emails(self):
+        for user in (self.teacher_a, self.student_a):
+            self.client.force_login(user)
+            self.assertNotIn('@', self.client.get('/courses').content.decode())
+
+    def test_query_count_does_not_grow_with_courses(self):
+        for number in range(5):
+            course = Course.objects.create(code=f'EXTRA{number}', title='Extra', term='Fall 2026')
+            Enrollment.objects.create(user=self.student_a, course=course)
+            self.enroll('Extra Teacher', Enrollment.Role.INSTRUCTOR, course=course)
+        self.client.force_login(self.student_a)
+
+        # session + user + enrollments + instructors + students
+        with self.assertNumQueries(5):
+            self.client.get('/courses')

@@ -1,7 +1,9 @@
 import { mockAssignments, mockProgress, mockStudent } from "../data/mockData";
 import type {
+  ApiCourse,
   ApiUser,
   Assignment,
+  MyCourse,
   ProgrammingLanguage,
   StudentProfile,
   StudentProgress,
@@ -117,9 +119,6 @@ const postJson = (path: string, body: object = {}): Promise<Response> =>
 
 const toStudentProfile = (user: ApiUser): StudentProfile => ({
   accountType: user.account_type,
-  teachingCourses: user.enrollments
-    .filter((enrollment) => enrollment.role === "instructor")
-    .map((enrollment) => enrollment.course_title),
   courses: user.enrollments.map((enrollment) => ({
     id: enrollment.course_id,
     code: enrollment.course_code,
@@ -141,6 +140,22 @@ const toStudentProfile = (user: ApiUser): StudentProfile => ({
   // Mock until the /progress API exists.
   streakDays: mockStudent.streakDays,
 });
+
+const toMyCourse = (course: ApiCourse): MyCourse => ({
+  id: course.id,
+  code: course.code,
+  title: course.title,
+  term: course.term,
+  role: course.role,
+  sectionCode: course.section_code,
+  instructorNames: course.instructor_names,
+  studentCount: course.student_count,
+});
+
+export const fetchMyCourses = async (): Promise<MyCourse[]> => {
+  const response = await sendRequest("/courses");
+  return ((await response.json()) as ApiCourse[]).map(toMyCourse);
+};
 
 export const fetchAssignments = async (): Promise<Assignment[]> => {
   await delay(600);

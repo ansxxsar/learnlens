@@ -77,7 +77,6 @@ export const mockProgress: StudentProgress = {
 
 export const mockStudent: StudentProfile = {
   accountType: "student",
-  teachingCourses: [],
   courses: [],
   photoUrl: null,
   preferredLanguage: null,
