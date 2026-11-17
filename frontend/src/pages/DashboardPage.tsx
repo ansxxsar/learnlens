@@ -1,8 +1,12 @@
 import { MyCoursesContainer } from "../components/containers/MyCoursesContainer";
 import { ProgressContainer } from "../components/containers/ProgressContainer";
 import { PageHeader } from "../components/presentational/PageHeader";
+import { useAppStore } from "../store/useAppStore";
 
 export function DashboardPage() {
+  // Loaded by ProgressContainer below; the hero shows the same streak.
+  const progress = useAppStore((state) => state.progress);
+
   return (
     <div className="app">
       <PageHeader>
@@ -32,10 +36,14 @@ export function DashboardPage() {
           </p>
         </div>
 
-        <div className="hero__streak">
-          <strong>5 day</strong>
-          <span>learning streak</span>
-        </div>
+        {progress && (
+          <div className="hero__streak">
+            <strong>
+              {progress.streakDays} {progress.streakDays === 1 ? "day" : "days"}
+            </strong>
+            <span>learning streak</span>
+          </div>
+        )}
       </section>
 
       <main>

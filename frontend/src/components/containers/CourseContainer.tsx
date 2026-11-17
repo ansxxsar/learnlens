@@ -11,6 +11,7 @@ import type { StatusAction } from "../../utils/assignments";
 import { AssignmentForm } from "../presentational/AssignmentForm";
 import { CourseAssignmentItem } from "../presentational/CourseAssignmentItem";
 import { CourseCard } from "../presentational/CourseCard";
+import { SubmissionContainer } from "./SubmissionContainer";
 
 interface CourseContainerProps {
   courseId: number;
@@ -36,6 +37,8 @@ export function CourseContainer({ courseId }: CourseContainerProps) {
   const { status: actionStatus, run: runAction } = useSubmitStatus();
   const [formTarget, setFormTarget] = useState<FormTarget>(null);
   const [busyId, setBusyId] = useState<number | null>(null);
+  // The assignment whose submission form a student has open.
+  const [submittingId, setSubmittingId] = useState<number | null>(null);
 
   if (isLoading) {
     return <p className="state-message">Loading the course...</p>;
@@ -147,7 +150,23 @@ export function CourseContainer({ courseId }: CourseContainerProps) {
               isBusy={busyId === assignment.id}
               onEdit={() => openForm(assignment)}
               onAction={(action) => void handleAction(assignment, action)}
-            />
+              isSubmitting={submittingId === assignment.id}
+              onStartSubmission={() => setSubmittingId(assignment.id)}
+            >
+              {submittingId === assignment.id && (
+                <SubmissionContainer
+                  courseId={courseId}
+                  assignmentId={assignment.id}
+                  onSubmitted={(attemptNumber) =>
+                    saveAssignment({
+                      ...assignment,
+                      attemptCount: attemptNumber,
+                    })
+                  }
+                  onClose={() => setSubmittingId(null)}
+                />
+              )}
+            </CourseAssignmentItem>
           ))
         )}
       </section>

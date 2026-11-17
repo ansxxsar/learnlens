@@ -35,3 +35,7 @@ class IsCourseMember(CourseRolePermission):
 
 class IsCourseInstructor(CourseRolePermission):
     allowed_roles = (Enrollment.Role.INSTRUCTOR,)
+
+
+class IsCourseStudent(CourseRolePermission):
+    allowed_roles = (Enrollment.Role.STUDENT,)

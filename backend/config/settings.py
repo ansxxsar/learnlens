@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     # LearnLens apps
     'accounts',
     'courses',
+    'submissions',
 ]
 
 # Custom user model (table "users" in the ERD). Must be set before the first migrate.
@@ -109,6 +110,8 @@ REST_FRAMEWORK = {
         # These two are counted per signed-in user.
         'change_password': '10/minute',
         'profile_photo': '30/hour',
+        # Per signed-in user; enough for quick resubmits, not for flooding.
+        'submission': '20/minute',
     },
 }
 
@@ -148,7 +151,9 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+# Times are stored in UTC (USE_TZ). This zone decides where a day starts for
+# daily progress and streaks: SDU is in Kazakhstan (UTC+5).
+TIME_ZONE = 'Asia/Almaty'
 
 USE_I18N = True
 

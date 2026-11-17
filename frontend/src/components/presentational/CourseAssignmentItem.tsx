@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { CourseAssignment } from "../../types";
 import type { StatusAction } from "../../utils/assignments";
 import {
@@ -12,7 +13,15 @@ interface CourseAssignmentItemProps {
   isBusy: boolean;
   onEdit: () => void;
   onAction: (action: StatusAction) => void;
+  // Students only: whether the submission form is open, and opening it.
+  isSubmitting?: boolean;
+  onStartSubmission?: () => void;
+  // The submission form, shown under the instructions while open.
+  children?: ReactNode;
 }
+
+const attemptsLabel = (count: number): string =>
+  count === 1 ? "1 attempt" : `${count} attempts`;
 
 export function CourseAssignmentItem({
   assignment,
@@ -20,7 +29,12 @@ export function CourseAssignmentItem({
   isBusy,
   onEdit,
   onAction,
+  isSubmitting = false,
+  onStartSubmission,
+  children,
 }: CourseAssignmentItemProps) {
+  const attemptCount = assignment.attemptCount ?? 0;
+  const canSubmit = !canManage && assignment.status === "published";
   // Students only see published and closed work, so only "Closed" needs a badge.
   const showStatus = canManage || assignment.status === "closed";
 
@@ -28,6 +42,11 @@ export function CourseAssignmentItem({
     <article className="course-assignment">
       <div className="course-assignment__header">
         <h3>{assignment.title}</h3>
+        {!canManage && attemptCount > 0 && (
+          <span className="status course-assignment__status--published course-assignment__done">
+            Done · {attemptsLabel(attemptCount)}
+          </span>
+        )}
         {showStatus && (
           <span
             className={`status course-assignment__status--${assignment.status}`}
@@ -43,6 +62,20 @@ export function CourseAssignmentItem({
       <p className="course-assignment__instructions">
         {assignment.instructions}
       </p>
+
+      {children}
+
+      {canSubmit && !isSubmitting && (
+        <div className="course-assignment__actions">
+          <button
+            className="primary-button"
+            type="button"
+            onClick={onStartSubmission}
+          >
+            {attemptCount > 0 ? "Submit again" : "Submit solution"}
+          </button>
+        </div>
+      )}
 
       {canManage && assignment.status !== "archived" && (
         <div className="course-assignment__actions">

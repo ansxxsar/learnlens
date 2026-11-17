@@ -1,11 +1,3 @@
-export interface StudentProgress {
-  level: number;
-  xp: number;
-  nextLevelXp: number;
-  completedAssignments: number;
-  totalAssignments: number;
-}
-
 export type AccountType = "student" | "teacher" | "admin";
 
 export interface ProfileCourse {
@@ -25,7 +17,6 @@ export interface StudentProfile {
   initials: string;
   email: string;
   course: string;
-  streakDays: number;
 }
 
 export interface ApiEnrollment {
@@ -77,6 +68,7 @@ export interface ApiAssignment {
   due_at: string;
   published_at: string | null;
   created_at: string;
+  attempt_count: number | null;
 }
 
 export interface CourseAssignment {
@@ -87,6 +79,8 @@ export interface CourseAssignment {
   feedbackDepth: FeedbackDepth;
   dueAt: string;
   publishedAt: string | null;
+  // The student's own attempts; null for instructors.
+  attemptCount: number | null;
 }
 
 // What an instructor fills in on the assignment form.
@@ -123,3 +117,60 @@ export interface LanguageOption {
 }
 
 export type ThemePreference = "light" | "system" | "dark";
+
+export interface ApiSubmission {
+  id: number;
+  attempt_number: number;
+  status: "queued" | "running" | "completed" | "failed";
+  submitted_at: string;
+  language: ProgrammingLanguage | null;
+  code: string;
+}
+
+export interface Submission {
+  id: number;
+  attemptNumber: number;
+  status: ApiSubmission["status"];
+  submittedAt: string;
+  language: ProgrammingLanguage | null;
+  code: string;
+}
+
+// GET /progress: daily practice, counted from submissions. Not a grade.
+export interface ApiDailyProgress {
+  today: string;
+  streak_days: number;
+  practiced_today: boolean;
+  week: { date: string; submissions: number }[];
+  tasks: {
+    assignment_id: number;
+    course_id: number;
+    course_code: string;
+    title: string;
+    due_at: string;
+    is_done: boolean;
+    is_overdue: boolean;
+  }[];
+  completed_tasks: number;
+  total_tasks: number;
+}
+
+export interface ProgressTask {
+  assignmentId: number;
+  courseId: number;
+  courseCode: string;
+  title: string;
+  dueAt: string;
+  isDone: boolean;
+  isOverdue: boolean;
+}
+
+export interface DailyProgress {
+  today: string;
+  streakDays: number;
+  practicedToday: boolean;
+  week: { date: string; submissions: number }[];
+  tasks: ProgressTask[];
+  completedTasks: number;
+  totalTasks: number;
+}

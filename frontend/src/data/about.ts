@@ -106,7 +106,7 @@ export const principles = [
   {
     symbol: "★",
     title: "XP is not a grade",
-    text: "XP and levels show personal progress, and stay separate from official grades.",
+    text: "Daily tasks and streaks show your practice habit, and stay separate from official grades.",
   },
 ];
 

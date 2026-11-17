@@ -1,21 +1,18 @@
-import { mockProgress, mockStudent } from "../data/mockData";
 import type {
   ApiAssignment,
+  ApiDailyProgress,
+  ApiSubmission,
   ApiCourse,
   ApiUser,
   AssignmentInput,
   CourseAssignment,
   CourseAssignmentStatus,
+  DailyProgress,
   MyCourse,
   ProgrammingLanguage,
   StudentProfile,
-  StudentProgress,
+  Submission,
 } from "../types";
-
-const delay = (milliseconds: number): Promise<void> =>
-  new Promise((resolve) => {
-    window.setTimeout(resolve, milliseconds);
-  });
 
 const REQUEST_TIMEOUT_MS = 10_000;
 const UPLOAD_TIMEOUT_MS = 60_000;
@@ -138,8 +135,6 @@ const toStudentProfile = (user: ApiUser): StudentProfile => ({
     .join(""),
   email: user.email,
   course: user.enrollments[0]?.course_title ?? "No course yet",
-  // Mock until the /progress API exists.
-  streakDays: mockStudent.streakDays,
 });
 
 const toMyCourse = (course: ApiCourse): MyCourse => ({
@@ -171,6 +166,7 @@ const toCourseAssignment = (assignment: ApiAssignment): CourseAssignment => ({
   feedbackDepth: assignment.feedback_depth,
   dueAt: assignment.due_at,
   publishedAt: assignment.published_at,
+  attemptCount: assignment.attempt_count,
 });
 
 const readAssignment = async (response: Response): Promise<CourseAssignment> =>
@@ -228,9 +224,59 @@ export const deleteAssignment = async (
   });
 };
 
-export const fetchProgress = async (): Promise<StudentProgress> => {
-  await delay(400);
-  return mockProgress;
+export const fetchProgress = async (): Promise<DailyProgress> => {
+  const response = await sendRequest("/progress");
+  const progress = (await response.json()) as ApiDailyProgress;
+  return {
+    today: progress.today,
+    streakDays: progress.streak_days,
+    practicedToday: progress.practiced_today,
+    week: progress.week,
+    tasks: progress.tasks.map((task) => ({
+      assignmentId: task.assignment_id,
+      courseId: task.course_id,
+      courseCode: task.course_code,
+      title: task.title,
+      dueAt: task.due_at,
+      isDone: task.is_done,
+      isOverdue: task.is_overdue,
+    })),
+    completedTasks: progress.completed_tasks,
+    totalTasks: progress.total_tasks,
+  };
+};
+
+const toSubmission = (submission: ApiSubmission): Submission => ({
+  id: submission.id,
+  attemptNumber: submission.attempt_number,
+  status: submission.status,
+  submittedAt: submission.submitted_at,
+  language: submission.language,
+  code: submission.code,
+});
+
+export const fetchMyAttempts = async (
+  courseId: number,
+  assignmentId: number,
+): Promise<Submission[]> => {
+  const response = await sendRequest(
+    `${assignmentsPath(courseId, assignmentId)}/submissions`,
+  );
+  return ((await response.json()) as ApiSubmission[]).map(toSubmission);
+};
+
+// Only stores the attempt. The code is never run in the browser or the API.
+export const submitAttempt = async (
+  courseId: number,
+  assignmentId: number,
+  language: ProgrammingLanguage,
+  code: string,
+): Promise<Submission> => {
+  const response = await postJson(
+    `${assignmentsPath(courseId, assignmentId)}/submissions`,
+    { language, code },
+  );
+  return toSubmission((await response.json()) as ApiSubmission);
 };
 
 export const signIn = async (

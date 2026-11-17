@@ -40,7 +40,7 @@ class CourseAssignmentsView(APIView):
 
     def get(self, request, course_id):
         role = get_course_role(request.user, course_id)
-        assignments = get_course_assignments(course_id, role)
+        assignments = get_course_assignments(course_id, request.user, role)
         return Response(AssignmentSerializer(assignments, many=True).data)
 
     def post(self, request, course_id):

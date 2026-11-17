@@ -1,12 +1,12 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import type { StudentProfile, StudentProgress } from "../../types";
+import type { DailyProgress, StudentProfile } from "../../types";
 import { Avatar } from "./Avatar";
 import { RoleBadge } from "./RoleBadge";
 
 interface UserMenuProps {
   student: StudentProfile;
-  progress: StudentProgress | null;
+  progress: DailyProgress | null;
 }
 
 export function UserMenu({ student, progress }: UserMenuProps) {
@@ -92,18 +92,25 @@ export function UserMenu({ student, progress }: UserMenuProps) {
               <dd>{student.course}</dd>
             </div>
             {isStudent && progress && (
-              <div>
-                <dt>Level</dt>
-                <dd>
-                  {progress.level} · {progress.xp} XP
-                </dd>
-              </div>
-            )}
-            {isStudent && (
-              <div>
-                <dt>Streak</dt>
-                <dd>{student.streakDays} days</dd>
-              </div>
+              <>
+                <div>
+                  <dt>Today</dt>
+                  <dd>{progress.practicedToday ? "Practiced ✓" : "Not yet"}</dd>
+                </div>
+                <div>
+                  <dt>Streak</dt>
+                  <dd>
+                    {progress.streakDays}{" "}
+                    {progress.streakDays === 1 ? "day" : "days"}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Tasks</dt>
+                  <dd>
+                    {progress.completedTasks} of {progress.totalTasks} done
+                  </dd>
+                </div>
+              </>
             )}
           </dl>
 

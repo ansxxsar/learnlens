@@ -6,6 +6,8 @@ only ever see courses they belong to.
 
 from dataclasses import dataclass
 
+from django.db.models import Count, Q
+
 from .models import Assignment, Enrollment
 
 
@@ -74,8 +76,11 @@ def get_my_courses(user, course_id=None):
 STUDENT_VISIBLE_STATUSES = (Assignment.Status.PUBLISHED, Assignment.Status.CLOSED)
 
 
-def get_course_assignments(course_id, role):
+def get_course_assignments(course_id, user, role):
     assignments = Assignment.objects.filter(course_id=course_id).order_by('due_at', 'id')
     if role != Enrollment.Role.INSTRUCTOR:
-        assignments = assignments.filter(status__in=STUDENT_VISIBLE_STATUSES)
+        # Each student sees how many attempts they made, never anyone else's.
+        assignments = assignments.filter(status__in=STUDENT_VISIBLE_STATUSES).annotate(
+            attempt_count=Count('submissions', filter=Q(submissions__student=user))
+        )
     return assignments

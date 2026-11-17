@@ -11,6 +11,7 @@ export default defineConfig({
       "/auth": { target: "http://127.0.0.1:8000", changeOrigin: false },
       // Proxies "/courses" and everything under it, so no page route may start with it.
       "/courses": { target: "http://127.0.0.1:8000", changeOrigin: false },
+      "/progress": { target: "http://127.0.0.1:8000", changeOrigin: false },
     },
   },
 })

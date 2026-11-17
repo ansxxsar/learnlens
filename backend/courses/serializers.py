@@ -30,6 +30,8 @@ class AssignmentSerializer(serializers.Serializer):
     due_at = serializers.DateTimeField()
     published_at = serializers.DateTimeField(allow_null=True)
     created_at = serializers.DateTimeField()
+    # The requesting student's own attempts; null for instructors.
+    attempt_count = serializers.IntegerField(default=None)
 
 
 class AssignmentWriteSerializer(serializers.Serializer):

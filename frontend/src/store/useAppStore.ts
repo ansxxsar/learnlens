@@ -13,7 +13,7 @@ import {
 import type {
   ProgrammingLanguage,
   StudentProfile,
-  StudentProgress,
+  DailyProgress,
   ThemePreference,
 } from "../types";
 import { readThemePreference, saveThemePreference } from "../services/theme";
@@ -28,7 +28,7 @@ const authErrorState = (error: unknown) => ({
 });
 
 interface AppState {
-  progress: StudentProgress | null;
+  progress: DailyProgress | null;
   student: StudentProfile | null;
   isSigningOut: boolean;
   isSignedOut: boolean;

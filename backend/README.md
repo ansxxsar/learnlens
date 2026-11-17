@@ -112,3 +112,31 @@ Assignment rules (in `courses/services.py`):
 - `due_at` must be in the future whenever it is set.
 - Assignments belong to the whole course, so every instructor of the course can manage them.
 - Responses never include test cases, so hidden tests cannot leak through these endpoints.
+
+## Submissions and daily progress API
+
+Students submit code to published assignments of their own courses. **The code is only stored.** Nothing in
+the API runs it; attempts wait in the `queued` status for the isolated execution workers (not built yet).
+
+| Endpoint | Purpose | Success |
+|---|---|---|
+| `GET /courses/{id}/assignments/{aid}/submissions` | Students: their own attempts, newest first, with their code | 200 |
+| `POST /courses/{id}/assignments/{aid}/submissions` | Students: body `{"language", "code"}`. Saves a new attempt | 201 |
+| `GET /progress` | The signed-in user's daily practice and open tasks | 200 |
+
+- `language` is one of `python`, `java`, `cpp`, `javascript`, `html`, `css`. It decides the entry file
+  (`main.py`, `Main.java`, ...), which is how the language is stored, as the ERD has no language column.
+- Code must be non-empty and at most 50,000 characters. Whitespace is kept exactly.
+- Closed assignments take no new attempts. Drafts and archived ones answer 404. Instructors get 403.
+- At most 20 submissions per minute per user (`429` after that).
+- In `GET /courses/{id}/assignments`, students also get `attempt_count`, their own number of attempts.
+
+`GET /progress` returns `today`, `streak_days`, `practiced_today`, `week` (the last 7 days with a count of
+submissions each), `tasks` (published assignments in the user's student courses, soonest deadline first,
+each with `is_done` and `is_overdue`), `completed_tasks` and `total_tasks`.
+
+- A task is done once the student has submitted to it at least once. Progress tracks practice, not
+  correctness, and is kept separate from grades.
+- Days start at midnight in `TIME_ZONE` (`Asia/Almaty`), not UTC.
+- The streak counts days in a row with at least one submission. It stays alive until the end of today, so
+  it counts back from yesterday when today has no submission yet.
