@@ -41,18 +41,20 @@ python manage.py runserver         # admin at http://127.0.0.1:8000/admin/
 ## Authentication API
 
 Login uses Django session cookies. Only `@sdu.edu.kz` emails can register, and new accounts have no
-courses until they are enrolled. The `account_type` in the profile comes from these rules:
+courses until they are enrolled. The `account_type` in the profile chooses the home page: the teacher
+page or the student page. It comes from these rules, in order:
 
 | Account | `account_type` |
 |---|---|
 | Has an instructor enrollment | `teacher` |
 | Admin | `admin` |
-| Email starts with a number, or has a student enrollment | `student` |
-| Anyone else (a name-based email with no enrollment) | `pending_teacher` |
+| Has a student enrollment, or the email starts with a number | `student` |
+| Anyone else (a name-based email) | `teacher` |
 
-To approve a teacher, open **Users** in the admin site, filter by **Waiting for approval**, then add an
-enrollment with the `instructor` role. The email never grants teacher access by itself. Registration does
-not verify that someone owns the address yet, so add email verification before real users can register.
+The account type grants no permissions. A new teacher sees an empty teacher page until an admin enrolls
+them: open **Users** in the admin site, filter by **Teachers without a course**, check that the person
+really is a teacher, then add an enrollment with the `instructor` role. Registration does not verify that
+someone owns the address yet, so add email verification before real users can register.
 
 | Endpoint | Purpose | Success |
 |---|---|---|

@@ -8,7 +8,6 @@ const MAX_TILT_DEGREES = 7;
 const roleLabels: Record<StudentProfile["accountType"], string> = {
   student: "Student",
   teacher: "Teacher",
-  pending_teacher: "Waiting for approval",
   admin: "Admin",
 };
 

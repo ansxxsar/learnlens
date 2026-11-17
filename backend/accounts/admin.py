@@ -18,18 +18,20 @@ class UserEditForm(UserChangeForm):
         fields = ('email', 'full_name', 'is_admin', 'is_active')
 
 
-class WaitingForTeacherApprovalFilter(admin.SimpleListFilter):
-    """Accounts with a name-based email and no enrollment yet. To approve one,
-    add an enrollment with the instructor role."""
+class TeachersWithoutCourseFilter(admin.SimpleListFilter):
+    """Accounts with a name-based email and no enrollment yet. They see the
+    teacher page but have no courses until an enrollment with the instructor
+    role is added. Check that the person really is a teacher first, because
+    registration does not verify email ownership."""
 
-    title = 'teacher approval'
-    parameter_name = 'teacher_approval'
+    title = 'teacher course'
+    parameter_name = 'teacher_course'
 
     def lookups(self, request, model_admin):
-        return [('waiting', 'Waiting for approval')]
+        return [('none', 'Teachers without a course')]
 
     def queryset(self, request, queryset):
-        if self.value() == 'waiting':
+        if self.value() == 'none':
             return queryset.filter(is_admin=False, enrollments__isnull=True).exclude(
                 email__regex=STUDENT_EMAIL_PATTERN
             )
@@ -48,7 +50,7 @@ class UserAdmin(BaseUserAdmin):
     add_form = UserCreateForm
 
     list_display = ('email', 'full_name', 'is_admin', 'is_active', 'created_at')
-    list_filter = (WaitingForTeacherApprovalFilter, 'is_admin', 'is_active')
+    list_filter = (TeachersWithoutCourseFilter, 'is_admin', 'is_active')
     search_fields = ('email', 'full_name')
     ordering = ('email',)
     filter_horizontal = ()

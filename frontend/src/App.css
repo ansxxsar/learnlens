@@ -278,8 +278,7 @@
 }
 
 .progress-panel h2,
-.section-heading h2,
-.submission-panel h2 {
+.section-heading h2 {
   margin: 4px 0 0;
   font-family: "Manrope", sans-serif;
 }
@@ -315,20 +314,6 @@
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-}
-
-.dashboard__grid {
-  margin-top: 24px;
-  display: grid;
-  grid-template-columns: minmax(270px, 0.8fr) minmax(0, 1.6fr);
-  gap: 24px;
-}
-
-.assignment-list,
-.workspace {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
 }
 
 .section-heading {
@@ -559,23 +544,6 @@
   border-color: var(--color-error-text);
 }
 
-.assignment-card {
-  width: 100%;
-  padding: 20px;
-  color: inherit;
-  text-align: left;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 16px;
-  cursor: pointer;
-  transition: 160ms ease;
-}
-
-.assignment-card:hover {
-  border-color: var(--color-border-hover);
-  transform: translateY(-2px);
-}
-
 .assignment-card--selected {
   border-color: var(--color-accent);
   box-shadow: var(--shadow-selected);
@@ -596,17 +564,6 @@
   font-weight: 700;
 }
 
-.assignment-card h3 {
-  margin: 18px 0 8px;
-  font-family: "Manrope", sans-serif;
-}
-
-.assignment-card p {
-  margin: 0 0 18px;
-  color: var(--color-text-muted);
-  line-height: 1.5;
-}
-
 .assignment-card__footer {
   color: var(--color-text-muted);
   font-size: 14px;
@@ -622,88 +579,6 @@
   font-weight: 700;
   text-transform: capitalize;
   border-radius: 999px;
-}
-
-.status--completed {
-  color: var(--color-status-done-text);
-  background: var(--color-status-done-bg);
-}
-
-.status--in-progress {
-  color: var(--color-status-active-text);
-  background: var(--color-status-active-bg);
-}
-
-.status--not-started {
-  color: var(--color-status-idle-text);
-  background: var(--color-status-idle-bg);
-}
-
-.submission-panel,
-.feedback-panel {
-  padding: 28px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 18px;
-  box-shadow: var(--shadow-sm);
-}
-
-.language-picker {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-}
-
-.submission-panel .language-picker label {
-  margin: 0 0 4px;
-  color: var(--color-text-subtle);
-  font-size: 12px;
-}
-
-.language-select {
-  padding: 8px 32px 8px 12px;
-  color: var(--color-text);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border-strong);
-  border-radius: 10px;
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.language-select:focus-visible {
-  outline: 3px solid var(--color-accent);
-  border-color: var(--color-accent);
-}
-
-.language-select:disabled {
-  cursor: not-allowed;
-  opacity: 0.65;
-}
-
-.submission-panel label {
-  margin: 24px 0 8px;
-  display: block;
-  font-weight: 700;
-}
-
-.code-editor {
-  width: 100%;
-  min-height: 280px;
-  padding: 20px;
-  resize: vertical;
-  color: var(--color-editor-text);
-  background: var(--color-editor-bg);
-  border: 1px solid var(--color-editor-border);
-  border-radius: 13px;
-  font-family: "Cascadia Code", Consolas, monospace;
-  font-size: 14px;
-  line-height: 1.65;
-}
-
-.code-editor:focus {
-  outline: 3px solid var(--color-accent);
-  border-color: var(--color-accent);
 }
 
 .primary-button {
@@ -726,12 +601,6 @@
   cursor: wait;
 }
 
-.feedback-panel {
-  display: grid;
-  grid-template-columns: 160px 1fr;
-  gap: 28px;
-}
-
 .feedback-panel__score {
   padding: 20px;
   display: flex;
@@ -747,22 +616,6 @@
   color: var(--color-accent-text);
   font-family: "Manrope", sans-serif;
   font-size: 38px;
-}
-
-.feedback-panel h3 {
-  margin: 0 0 8px;
-  font-family: "Manrope", sans-serif;
-}
-
-.feedback-panel h3:not(:first-child) {
-  margin-top: 20px;
-}
-
-.feedback-panel ul,
-.feedback-panel p {
-  margin: 0;
-  color: var(--color-text-muted);
-  line-height: 1.6;
 }
 
 .secondary-button {
@@ -927,7 +780,6 @@
   gap: 16px;
 }
 
-
 .theme-switcher {
   padding: 8px 14px;
   display: flex;
@@ -969,7 +821,6 @@
     display: none;
   }
 
-  .dashboard__grid,
   .course-page {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -1021,8 +872,7 @@
     margin-bottom: 20px;
   }
 
-  .progress-panel,
-  .feedback-panel {
+  .progress-panel {
     grid-template-columns: 1fr;
   }
 
@@ -1032,15 +882,6 @@
 
   .submission-panel__header {
     flex-wrap: wrap;
-  }
-
-  .language-picker {
-    align-items: flex-start;
-  }
-
-  .submission-panel,
-  .feedback-panel {
-    padding: 20px;
   }
 }
 
@@ -1601,14 +1442,6 @@
 .account__footer {
   display: flex;
   justify-content: flex-end;
-}
-
-.auth-panel__links {
-  margin-top: 20px;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
 }
 
 .icon-link {

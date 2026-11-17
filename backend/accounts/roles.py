@@ -1,8 +1,13 @@
 """Registration and account type rules, based on SDU email addresses.
 
-The email only decides what a new account starts as. Teacher access always
-comes from an instructor enrollment, which only an admin can create, because
-registration is open and does not yet prove that someone owns the address.
+At SDU, student emails start with a number and staff emails start with a
+name. The account type only chooses which home page the app shows.
+
+Security: the account type grants no permissions. Registration is open and
+does not yet prove that someone owns the address, so anyone can register a
+name email and see the teacher page. Course access, including creating
+assignments, still comes only from an enrollment, which only an admin can
+create (see courses/permissions.py).
 """
 
 import re
@@ -15,7 +20,6 @@ STUDENT_EMAIL_PATTERN = r'^[0-9]'
 class AccountType:
     STUDENT = 'student'
     TEACHER = 'teacher'
-    PENDING_TEACHER = 'pending_teacher'
     ADMIN = 'admin'
 
 
@@ -31,10 +35,12 @@ def is_student_email(email):
 def get_account_type(user):
     roles = set(user.enrollments.values_list('role', flat=True))
 
+    # An enrollment states the role for certain, so it wins over the email:
+    # a TA may have a number email, and a student a name email.
     if 'instructor' in roles:
         return AccountType.TEACHER
     if user.is_admin:
         return AccountType.ADMIN
-    if roles or is_student_email(user.email):
+    if 'student' in roles or is_student_email(user.email):
         return AccountType.STUDENT
-    return AccountType.PENDING_TEACHER
+    return AccountType.TEACHER

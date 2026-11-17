@@ -130,16 +130,19 @@ class RegisterTests(AuthTestCase):
     def test_number_email_registers_as_student(self):
         self.assertEqual(self.register().data['account_type'], 'student')
 
-    def test_name_email_waits_for_approval_with_no_course_access(self):
+    def test_name_email_registers_as_teacher_with_no_course_access(self):
         response = self.register(email='aigerim.teacher@sdu.edu.kz')
 
-        self.assertEqual(response.data['account_type'], 'pending_teacher')
+        self.assertEqual(response.data['account_type'], 'teacher')
+        # The teacher page opens, but there is nothing to manage until an
+        # admin enrolls them as an instructor.
         self.assertEqual(response.data['enrollments'], [])
 
     def test_request_cannot_choose_its_own_account_type(self):
-        response = self.register(email='aigerim.teacher@sdu.edu.kz', account_type='teacher', role='instructor')
+        response = self.register(account_type='teacher', role='instructor')
 
-        self.assertEqual(response.data['account_type'], 'pending_teacher')
+        self.assertEqual(response.data['account_type'], 'student')
+        self.assertEqual(response.data['enrollments'], [])
 
     def test_request_cannot_make_itself_admin(self):
         self.assertEqual(self.register(is_admin=True, is_active=False).status_code, 201)
@@ -203,10 +206,16 @@ class AccountTypeTests(AuthTestCase):
     def test_teaching_assistant_with_number_email_is_a_teacher(self):
         self.assertEqual(self.account_type('251122003@sdu.edu.kz', Enrollment.Role.INSTRUCTOR), 'teacher')
 
-    def test_student_with_name_email_stops_waiting_once_enrolled(self):
+    def test_name_email_without_enrollment_is_a_teacher(self):
+        self.assertEqual(self.account_type('aigerim.teacher@sdu.edu.kz'), 'teacher')
+
+    def test_number_email_without_enrollment_is_a_student(self):
+        self.assertEqual(self.account_type('251122004@sdu.edu.kz'), 'student')
+
+    def test_student_with_name_email_is_a_student_once_enrolled(self):
         self.assertEqual(self.account_type('student.name@sdu.edu.kz', Enrollment.Role.STUDENT), 'student')
 
-    def test_admin_is_not_left_waiting(self):
+    def test_admin_with_name_email_stays_admin(self):
         self.assertEqual(self.account_type('admin@gmail.com', is_admin=True), 'admin')
 
     def test_name_email_alone_gives_no_course_permission(self):
@@ -214,7 +223,7 @@ class AccountTypeTests(AuthTestCase):
 
         self.assertIsNone(get_course_role(user, self.course.id))
 
-    def test_admin_filter_lists_only_accounts_waiting_for_approval(self):
+    def test_admin_filter_lists_only_teachers_without_a_course(self):
         waiting = get_user_model().objects.create_user(email='teacher@sdu.edu.kz', full_name='T', password=PASSWORD)
         get_user_model().objects.create_user(email='251122004@sdu.edu.kz', full_name='S', password=PASSWORD)
         approved = get_user_model().objects.create_user(email='prof@sdu.edu.kz', full_name='P', password=PASSWORD)
@@ -222,7 +231,7 @@ class AccountTypeTests(AuthTestCase):
         get_user_model().objects.create_superuser(email='admin@sdu.edu.kz', full_name='A', password=PASSWORD)
         self.client.force_login(get_user_model().objects.get(email='admin@sdu.edu.kz'))
 
-        response = self.client.get('/admin/accounts/user/', {'teacher_approval': 'waiting'})
+        response = self.client.get('/admin/accounts/user/', {'teacher_course': 'none'})
 
         self.assertEqual(response.status_code, 200)
         # self.user (student@example.com) from setUp also has a name-based email.

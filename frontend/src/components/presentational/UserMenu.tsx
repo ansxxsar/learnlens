@@ -13,7 +13,7 @@ export function UserMenu({ student, progress }: UserMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuId = useId();
-  // Streak, progress and assignments are student features.
+  // Streak and progress are student features.
   const isStudent = student.accountType !== "teacher";
 
   useEffect(() => {
@@ -111,26 +111,15 @@ export function UserMenu({ student, progress }: UserMenuProps) {
             >
               My account
             </Link>
-            {isStudent && (
-              <>
-                <a
-                  className="user-menu__item"
-                  href="#progress"
-                  role="menuitem"
-                  onClick={closeMenu}
-                >
-                  View progress
-                </a>
-                <a
-                  className="user-menu__item"
-                  href="#assignments"
-                  role="menuitem"
-                  onClick={closeMenu}
-                >
-                  My assignments
-                </a>
-              </>
-            )}
+            {/* Assignments live inside courses, so this opens the course list. */}
+            <Link
+              className="user-menu__item"
+              to="/"
+              role="menuitem"
+              onClick={closeMenu}
+            >
+              My courses
+            </Link>
             <Link
               className="user-menu__item"
               to="/sign-out"

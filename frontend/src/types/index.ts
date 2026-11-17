@@ -1,23 +1,3 @@
-export type AssignmentStatus = "not-started" | "in-progress" | "completed";
-
-export interface Assignment {
-  id: number;
-  title: string;
-  description: string;
-  difficulty: "Beginner" | "Intermediate" | "Advanced";
-  topic: string;
-  xp: number;
-  status: AssignmentStatus;
-  languages: ProgrammingLanguage[];
-}
-
-export interface Feedback {
-  score: number;
-  strengths: string[];
-  improvements: string[];
-  nextStep: string;
-}
-
 export interface StudentProgress {
   level: number;
   xp: number;
@@ -26,13 +6,7 @@ export interface StudentProgress {
   totalAssignments: number;
 }
 
-export interface SubmissionResult {
-  passedTests: number;
-  totalTests: number;
-  feedback: Feedback;
-}
-
-export type AccountType = "student" | "teacher" | "pending_teacher" | "admin";
+export type AccountType = "student" | "teacher" | "admin";
 
 export interface ProfileCourse {
   id: number;

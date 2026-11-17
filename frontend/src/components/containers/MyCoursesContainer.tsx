@@ -13,7 +13,11 @@ export function MyCoursesContainer({
   const { courses, isLoading, error } = useMyCourses();
 
   return (
-    <section className="my-courses" aria-labelledby="my-courses-title">
+    <section
+      className="my-courses"
+      id="courses"
+      aria-labelledby="my-courses-title"
+    >
       <div className="section-heading">
         <span className="eyebrow">Courses</span>
         <h2 id="my-courses-title">{title}</h2>

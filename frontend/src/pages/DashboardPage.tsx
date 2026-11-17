@@ -1,5 +1,5 @@
-import { DashboardContainer } from "../components/containers/DashboardContainer";
 import { MyCoursesContainer } from "../components/containers/MyCoursesContainer";
+import { ProgressContainer } from "../components/containers/ProgressContainer";
 import { PageHeader } from "../components/presentational/PageHeader";
 
 export function DashboardPage() {
@@ -13,8 +13,8 @@ export function DashboardPage() {
           >
             Dashboard
           </a>
-          <a className="navigation__link" href="#assignments">
-            Assignments
+          <a className="navigation__link" href="#courses">
+            Courses
           </a>
           <a className="navigation__link" href="#progress">
             Progress
@@ -38,12 +38,16 @@ export function DashboardPage() {
         </div>
       </section>
 
-      <MyCoursesContainer
-        title="My courses"
-        emptyMessage="You are not enrolled in any course yet. Your teacher or an administrator will add you."
-      />
+      <main>
+        <MyCoursesContainer
+          title="My courses"
+          emptyMessage="You are not enrolled in any course yet. Your teacher or an administrator will add you."
+        />
 
-      <DashboardContainer />
+        <div className="dashboard">
+          <ProgressContainer />
+        </div>
+      </main>
     </div>
   );
 }
