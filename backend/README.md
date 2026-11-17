@@ -84,6 +84,11 @@ no section teaches the whole course.
 | Endpoint | Purpose | Success |
 |---|---|---|
 | `GET /courses` | The signed-in user's own courses | 200 |
+| `GET /courses/{id}` | One of those courses (members only) | 200 |
+| `GET /courses/{id}/assignments` | The course's assignments (members only, see below) | 200 |
+| `POST /courses/{id}/assignments` | Instructors: body `{"title", "instructions", "due_at", "feedback_depth", "publish"}` | 201 |
+| `PATCH /courses/{id}/assignments/{aid}` | Instructors: any of the fields above, or `"status"` | 200 |
+| `DELETE /courses/{id}/assignments/{aid}` | Instructors: deletes a draft | 204 |
 
 Each course has `id`, `code`, `title`, `term`, `role` (`student` or `instructor`), `section_code`,
 `instructor_names` and `student_count`.
@@ -93,3 +98,15 @@ Each course has `id`, `code`, `title`, `term`, `role` (`student` or `instructor`
 - `student_count` is only sent to instructors: the students in their section, or in the whole course if
   they have no section. Students get `null`.
 - Courses are created, and people enrolled, in the admin site for now.
+
+Assignment rules (in `courses/services.py`):
+
+- Students see only `published` and `closed` assignments. Drafts and archived work are hidden from them.
+- New assignments are drafts unless `"publish": true` is sent. `status`, `course` and `published_at` cannot be
+  set directly.
+- Status moves only as `draft → published → closed ⇄ published`, and `published` or `closed → archived`.
+  Archived assignments cannot be changed.
+- Only drafts can be deleted, because published work may already have student attempts.
+- `due_at` must be in the future whenever it is set.
+- Assignments belong to the whole course, so every instructor of the course can manage them.
+- Responses never include test cases, so hidden tests cannot leak through these endpoints.

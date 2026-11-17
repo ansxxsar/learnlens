@@ -86,6 +86,43 @@ export interface MyCourse {
   studentCount: number | null;
 }
 
+export type CourseAssignmentStatus =
+  | "draft"
+  | "published"
+  | "closed"
+  | "archived";
+
+export type FeedbackDepth = "hint" | "guided" | "detailed";
+
+export interface ApiAssignment {
+  id: number;
+  title: string;
+  instructions: string;
+  status: CourseAssignmentStatus;
+  feedback_depth: FeedbackDepth;
+  due_at: string;
+  published_at: string | null;
+  created_at: string;
+}
+
+export interface CourseAssignment {
+  id: number;
+  title: string;
+  instructions: string;
+  status: CourseAssignmentStatus;
+  feedbackDepth: FeedbackDepth;
+  dueAt: string;
+  publishedAt: string | null;
+}
+
+// What an instructor fills in on the assignment form.
+export interface AssignmentInput {
+  title: string;
+  instructions: string;
+  dueAt: string;
+  feedbackDepth: FeedbackDepth;
+}
+
 export interface ApiUser {
   id: number;
   email: string;

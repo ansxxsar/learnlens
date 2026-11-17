@@ -1,15 +1,11 @@
 import { DashboardContainer } from "../components/containers/DashboardContainer";
 import { MyCoursesContainer } from "../components/containers/MyCoursesContainer";
-import { ThemeSwitcherContainer } from "../components/containers/ThemeSwitcherContainer";
-import { UserMenuContainer } from "../components/containers/UserMenuContainer";
-import { BrandLink } from "../components/presentational/BrandLink";
+import { PageHeader } from "../components/presentational/PageHeader";
 
 export function DashboardPage() {
   return (
     <div className="app">
-      <header className="app-header">
-        <BrandLink />
-
+      <PageHeader>
         <nav className="navigation" aria-label="Main navigation">
           <a
             className="navigation__link navigation__link--active"
@@ -24,12 +20,7 @@ export function DashboardPage() {
             Progress
           </a>
         </nav>
-
-        <div className="app-header__actions">
-          <ThemeSwitcherContainer />
-          <UserMenuContainer />
-        </div>
-      </header>
+      </PageHeader>
 
       <section className="hero" id="dashboard">
         <div>

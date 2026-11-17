@@ -4,6 +4,7 @@ import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { GuestOnly, RequireAuth } from "./components/containers/AuthGuards";
 import { AboutPage } from "./pages/AboutPage";
 import { AccountPage } from "./pages/AccountPage";
+import { CoursePage } from "./pages/CoursePage";
 import { HomePage } from "./pages/HomePage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { SignInPage } from "./pages/SignInPage";
@@ -29,6 +30,8 @@ function App() {
       <Route element={<RequireAuth />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/account" element={<AccountPage />} />
+        {/* Not "/courses": the dev server sends that path to the API. */}
+        <Route path="/course/:courseId" element={<CoursePage />} />
       </Route>
       <Route element={<GuestOnly />}>
         <Route path="/sign-in" element={<SignInPage />} />

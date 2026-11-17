@@ -8,14 +8,19 @@ export interface SubmitStatus {
   fieldErrors: Record<string, string[]>;
 }
 
+const idleStatus: SubmitStatus = {
+  isSaving: false,
+  isSaved: false,
+  error: null,
+  fieldErrors: {},
+};
+
 // Tracks one form's request, so each form on a page shows its own result.
 export function useSubmitStatus() {
-  const [status, setStatus] = useState<SubmitStatus>({
-    isSaving: false,
-    isSaved: false,
-    error: null,
-    fieldErrors: {},
-  });
+  const [status, setStatus] = useState<SubmitStatus>(idleStatus);
+
+  // Clears an old result, for example when a closed form is opened again.
+  const reset = useCallback(() => setStatus(idleStatus), []);
 
   const run = useCallback(async (action: () => Promise<void>) => {
     setStatus({ isSaving: true, isSaved: false, error: null, fieldErrors: {} });
@@ -38,5 +43,5 @@ export function useSubmitStatus() {
     }
   }, []);
 
-  return { status, run };
+  return { status, run, reset };
 }

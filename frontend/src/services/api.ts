@@ -1,8 +1,12 @@
 import { mockAssignments, mockProgress, mockStudent } from "../data/mockData";
 import type {
+  ApiAssignment,
   ApiCourse,
   ApiUser,
   Assignment,
+  AssignmentInput,
+  CourseAssignment,
+  CourseAssignmentStatus,
   MyCourse,
   ProgrammingLanguage,
   StudentProfile,
@@ -155,6 +159,76 @@ const toMyCourse = (course: ApiCourse): MyCourse => ({
 export const fetchMyCourses = async (): Promise<MyCourse[]> => {
   const response = await sendRequest("/courses");
   return ((await response.json()) as ApiCourse[]).map(toMyCourse);
+};
+
+export const fetchCourse = async (courseId: number): Promise<MyCourse> => {
+  const response = await sendRequest(`/courses/${courseId}`);
+  return toMyCourse((await response.json()) as ApiCourse);
+};
+
+const toCourseAssignment = (assignment: ApiAssignment): CourseAssignment => ({
+  id: assignment.id,
+  title: assignment.title,
+  instructions: assignment.instructions,
+  status: assignment.status,
+  feedbackDepth: assignment.feedback_depth,
+  dueAt: assignment.due_at,
+  publishedAt: assignment.published_at,
+});
+
+const readAssignment = async (response: Response): Promise<CourseAssignment> =>
+  toCourseAssignment((await response.json()) as ApiAssignment);
+
+const assignmentsPath = (courseId: number, assignmentId?: number): string =>
+  assignmentId === undefined
+    ? `/courses/${courseId}/assignments`
+    : `/courses/${courseId}/assignments/${assignmentId}`;
+
+const toAssignmentBody = (input: Partial<AssignmentInput>) => ({
+  title: input.title,
+  instructions: input.instructions,
+  due_at: input.dueAt,
+  feedback_depth: input.feedbackDepth,
+});
+
+export const fetchCourseAssignments = async (
+  courseId: number,
+): Promise<CourseAssignment[]> => {
+  const response = await sendRequest(assignmentsPath(courseId));
+  return ((await response.json()) as ApiAssignment[]).map(toCourseAssignment);
+};
+
+export const createAssignment = async (
+  courseId: number,
+  input: AssignmentInput,
+  publish: boolean,
+): Promise<CourseAssignment> =>
+  readAssignment(
+    await postJson(assignmentsPath(courseId), {
+      ...toAssignmentBody(input),
+      publish,
+    }),
+  );
+
+export const updateAssignment = async (
+  courseId: number,
+  assignmentId: number,
+  changes: Partial<AssignmentInput> & { status?: CourseAssignmentStatus },
+): Promise<CourseAssignment> =>
+  readAssignment(
+    await sendJson(assignmentsPath(courseId, assignmentId), "PATCH", {
+      ...toAssignmentBody(changes),
+      status: changes.status,
+    }),
+  );
+
+export const deleteAssignment = async (
+  courseId: number,
+  assignmentId: number,
+): Promise<void> => {
+  await sendWithCsrf(assignmentsPath(courseId, assignmentId), {
+    method: "DELETE",
+  });
 };
 
 export const fetchAssignments = async (): Promise<Assignment[]> => {

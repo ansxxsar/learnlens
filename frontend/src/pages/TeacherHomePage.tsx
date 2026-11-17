@@ -1,7 +1,5 @@
 import { MyCoursesContainer } from "../components/containers/MyCoursesContainer";
-import { ThemeSwitcherContainer } from "../components/containers/ThemeSwitcherContainer";
-import { UserMenuContainer } from "../components/containers/UserMenuContainer";
-import { BrandLink } from "../components/presentational/BrandLink";
+import { PageHeader } from "../components/presentational/PageHeader";
 
 interface TeacherHomePageProps {
   name: string;
@@ -10,22 +8,15 @@ interface TeacherHomePageProps {
 export function TeacherHomePage({ name }: TeacherHomePageProps) {
   return (
     <div className="app">
-      <header className="app-header">
-        <BrandLink />
-
-        <div className="app-header__actions">
-          <ThemeSwitcherContainer />
-          <UserMenuContainer />
-        </div>
-      </header>
+      <PageHeader />
 
       <section className="hero">
         <div>
           <span className="eyebrow">Teacher</span>
           <h1>Welcome, {name}</h1>
           <p>
-            These are the courses you teach. Creating and managing tasks is
-            coming next.
+            Open a course to create assignments and publish them to your
+            students.
           </p>
         </div>
       </section>

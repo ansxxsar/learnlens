@@ -28,7 +28,7 @@ export function MyCoursesContainer({
       {courses.length > 0 && (
         <div className="my-courses__grid">
           {courses.map((course) => (
-            <CourseCard key={course.id} course={course} />
+            <CourseCard key={course.id} course={course} isLink />
           ))}
         </div>
       )}

@@ -1,14 +1,17 @@
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
+from datetime import timedelta
+
 from django.test import TestCase
+from django.utils import timezone
 from rest_framework.response import Response
 from rest_framework.test import APIRequestFactory, force_authenticate
 from rest_framework.views import APIView
 
 from accounts.authentication import SessionAuth
 
-from .models import Course, CourseSection, Enrollment
+from .models import Assignment, Course, CourseSection, Enrollment
 from .permissions import IsCourseInstructor, IsCourseMember
 
 
@@ -209,3 +212,203 @@ class MyCoursesApiTests(TestCase):
         # session + user + enrollments + instructors + students
         with self.assertNumQueries(5):
             self.client.get('/courses')
+
+
+class CourseAssignmentsApiTests(TestCase):
+    """Course page and assignments: instructors manage, students read."""
+
+    def setUp(self):
+        self.course = Course.objects.create(code='CSS105', title='Introduction to Programming', term='Fall 2026')
+        self.other_course = Course.objects.create(code='CSS201', title='Data Structures', term='Fall 2026')
+        self.teacher = self.enroll('Teacher', Enrollment.Role.INSTRUCTOR)
+        self.student = self.enroll('Student', Enrollment.Role.STUDENT)
+        self.other_teacher = self.enroll('Other Teacher', Enrollment.Role.INSTRUCTOR, course=self.other_course)
+        self.due = timezone.now() + timedelta(days=7)
+
+    def enroll(self, name, role, course=None):
+        count = get_user_model().objects.count()
+        user = get_user_model().objects.create_user(
+            email=f'user{count}@sdu.edu.kz', full_name=name, password='test-pass-123'
+        )
+        Enrollment.objects.create(user=user, course=course or self.course, role=role)
+        return user
+
+    def url(self, assignment=None, course=None):
+        base = f'/courses/{(course or self.course).id}/assignments'
+        return f'{base}/{assignment.id}' if assignment else base
+
+    def make(self, status=Assignment.Status.DRAFT, title='Task', course=None):
+        return Assignment.objects.create(
+            course=course or self.course, title=title, instructions='Do it.', status=status, due_at=self.due
+        )
+
+    def as_user(self, user):
+        self.client.force_login(user)
+        return self.client
+
+    def create(self, user, **overrides):
+        body = {'title': 'Hello world', 'instructions': 'Print a greeting.', 'due_at': self.due.isoformat()}
+        body.update(overrides)
+        return self.as_user(user).post(self.url(), body, content_type='application/json')
+
+    def patch(self, user, assignment, body):
+        return self.as_user(user).patch(self.url(assignment), body, content_type='application/json')
+
+    # Course page
+
+    def test_member_gets_course_detail(self):
+        response = self.as_user(self.student).get(f'/courses/{self.course.id}')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['title'], 'Introduction to Programming')
+        self.assertEqual(response.json()['role'], 'student')
+
+    def test_non_member_cannot_open_course(self):
+        response = self.as_user(self.other_teacher).get(f'/courses/{self.course.id}')
+
+        self.assertEqual(response.status_code, 403)
+
+    # Listing
+
+    def test_student_sees_only_published_and_closed_assignments(self):
+        for status in Assignment.Status.values:
+            self.make(status=status, title=status)
+
+        titles = [a['title'] for a in self.as_user(self.student).get(self.url()).json()]
+
+        self.assertCountEqual(titles, ['published', 'closed'])
+
+    def test_instructor_sees_every_assignment(self):
+        for status in Assignment.Status.values:
+            self.make(status=status, title=status)
+
+        titles = [a['title'] for a in self.as_user(self.teacher).get(self.url()).json()]
+
+        self.assertCountEqual(titles, Assignment.Status.values)
+
+    def test_non_member_cannot_list_assignments(self):
+        self.make(status=Assignment.Status.PUBLISHED)
+
+        self.assertEqual(self.as_user(self.other_teacher).get(self.url()).status_code, 403)
+
+    def test_assignment_response_has_no_test_cases(self):
+        self.make(status=Assignment.Status.PUBLISHED)
+
+        [assignment] = self.as_user(self.student).get(self.url()).json()
+
+        self.assertNotIn('test_cases', assignment)
+
+    # Creating
+
+    def test_instructor_creates_a_draft_by_default(self):
+        response = self.create(self.teacher)
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json()['status'], 'draft')
+        self.assertIsNone(response.json()['published_at'])
+        self.assertEqual(Assignment.objects.get().course, self.course)
+
+    def test_instructor_can_publish_on_create(self):
+        response = self.create(self.teacher, publish=True)
+
+        self.assertEqual(response.json()['status'], 'published')
+        self.assertIsNotNone(response.json()['published_at'])
+
+    def test_student_cannot_create_assignment(self):
+        self.assertEqual(self.create(self.student).status_code, 403)
+        self.assertFalse(Assignment.objects.exists())
+
+    def test_instructor_of_another_course_cannot_create_here(self):
+        self.assertEqual(self.create(self.other_teacher).status_code, 403)
+
+    def test_deadline_must_be_in_the_future(self):
+        response = self.create(self.teacher, due_at=(timezone.now() - timedelta(hours=1)).isoformat())
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('due_at', response.json())
+
+    def test_client_cannot_set_status_or_course_directly(self):
+        response = self.create(self.teacher, status='published', course=self.other_course.id)
+
+        self.assertEqual(response.json()['status'], 'draft')
+        self.assertEqual(Assignment.objects.get().course, self.course)
+
+    # Updating
+
+    def test_instructor_edits_and_publishes(self):
+        assignment = self.make()
+
+        response = self.patch(self.teacher, assignment, {'title': 'Loops', 'status': 'published'})
+
+        self.assertEqual(response.status_code, 200)
+        assignment.refresh_from_db()
+        self.assertEqual(assignment.title, 'Loops')
+        self.assertEqual(assignment.status, 'published')
+        self.assertIsNotNone(assignment.published_at)
+
+    def test_reopening_keeps_first_publish_time(self):
+        assignment = self.make()
+        self.patch(self.teacher, assignment, {'status': 'published'})
+        first = Assignment.objects.get().published_at
+        self.patch(self.teacher, assignment, {'status': 'closed'})
+
+        self.patch(self.teacher, assignment, {'status': 'published'})
+
+        self.assertEqual(Assignment.objects.get().published_at, first)
+
+    def test_draft_cannot_jump_to_closed(self):
+        response = self.patch(self.teacher, self.make(), {'status': 'closed'})
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('status', response.json())
+
+    def test_published_cannot_go_back_to_draft(self):
+        response = self.patch(self.teacher, self.make(Assignment.Status.PUBLISHED), {'status': 'draft'})
+
+        self.assertEqual(response.status_code, 400)
+
+    def test_archived_assignment_cannot_be_changed(self):
+        response = self.patch(self.teacher, self.make(Assignment.Status.ARCHIVED), {'title': 'New'})
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {'detail': 'Archived assignments cannot be changed.'})
+
+    def test_student_cannot_update_assignment(self):
+        assignment = self.make(Assignment.Status.PUBLISHED)
+
+        self.assertEqual(self.patch(self.student, assignment, {'title': 'Hacked'}).status_code, 403)
+        assignment.refresh_from_db()
+        self.assertEqual(assignment.title, 'Task')
+
+    def test_assignment_of_another_course_is_not_found_through_this_course(self):
+        # The other teacher is an instructor of other_course, so the permission
+        # check passes; the lookup must still be scoped to that course.
+        foreign = self.make(course=self.course)
+
+        response = self.as_user(self.other_teacher).patch(
+            self.url(foreign, course=self.other_course), {'title': 'Hacked'}, content_type='application/json'
+        )
+
+        self.assertEqual(response.status_code, 404)
+        foreign.refresh_from_db()
+        self.assertEqual(foreign.title, 'Task')
+
+    # Deleting
+
+    def test_instructor_deletes_a_draft(self):
+        response = self.as_user(self.teacher).delete(self.url(self.make()))
+
+        self.assertEqual(response.status_code, 204)
+        self.assertFalse(Assignment.objects.exists())
+
+    def test_published_assignment_cannot_be_deleted(self):
+        response = self.as_user(self.teacher).delete(self.url(self.make(Assignment.Status.PUBLISHED)))
+
+        self.assertEqual(response.status_code, 400)
+        self.assertTrue(Assignment.objects.exists())
+
+    def test_student_cannot_delete(self):
+        response = self.as_user(self.student).delete(self.url(self.make()))
+
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(Assignment.objects.exists())

@@ -396,6 +396,169 @@
   text-align: right;
 }
 
+.course-card--link {
+  position: relative;
+  transition: 160ms ease;
+}
+
+.course-card--link:hover {
+  border-color: var(--color-border-hover);
+  transform: translateY(-2px);
+}
+
+.course-card__link {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Stretches the title link over the whole card. */
+.course-card__link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+}
+
+.course-card__link:focus-visible {
+  outline: none;
+}
+
+.course-card__link:focus-visible::after {
+  outline: 3px solid var(--color-accent);
+}
+
+.course-page__main {
+  margin: 28px 6% 60px;
+}
+
+.course-page__back {
+  display: inline-block;
+  margin-bottom: 16px;
+  color: var(--color-accent-text);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.course-page__back:hover {
+  text-decoration: underline;
+}
+
+.course-page {
+  display: grid;
+  grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
+  align-items: start;
+  gap: 24px;
+}
+
+.course-page__assignments {
+  display: grid;
+  gap: 16px;
+}
+
+.course-page__heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.course-page__heading .primary-button {
+  margin-top: 0;
+}
+
+.course-assignment {
+  padding: 20px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+}
+
+.course-assignment__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.course-assignment h3 {
+  margin: 0;
+  font-family: "Manrope", sans-serif;
+  font-size: 18px;
+  overflow-wrap: anywhere;
+}
+
+.course-assignment__due {
+  margin: 6px 0 12px;
+  color: var(--color-text-muted);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.course-assignment__instructions {
+  margin: 0;
+  color: var(--color-text-muted);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.course-assignment__actions {
+  margin-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.course-assignment__actions .secondary-button {
+  margin-top: 0;
+  padding: 8px 14px;
+  font-size: 14px;
+}
+
+.course-assignment__status--published {
+  color: var(--color-status-done-text);
+  background: var(--color-status-done-bg);
+}
+
+.course-assignment__status--draft {
+  color: var(--color-status-active-text);
+  background: var(--color-status-active-bg);
+}
+
+.course-assignment__status--closed,
+.course-assignment__status--archived {
+  color: var(--color-status-idle-text);
+  background: var(--color-status-idle-bg);
+}
+
+/* Two classes, so it wins over .secondary-button, which comes later. */
+.secondary-button.secondary-button--danger {
+  color: var(--color-error-text);
+  border-color: var(--color-error-border);
+}
+
+.secondary-button.secondary-button--danger:hover {
+  background: var(--color-error-bg);
+}
+
+.assignment-form__textarea {
+  width: 100%;
+  padding: 11px 14px;
+  color: var(--color-text);
+  background: var(--color-surface);
+  font: inherit;
+  font-weight: 400;
+  line-height: 1.5;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 10px;
+  resize: vertical;
+}
+
+.assignment-form__textarea[aria-invalid="true"] {
+  border-color: var(--color-error-text);
+}
+
 .assignment-card {
   width: 100%;
   padding: 20px;
@@ -806,7 +969,8 @@
     display: none;
   }
 
-  .dashboard__grid {
+  .dashboard__grid,
+  .course-page {
     grid-template-columns: minmax(0, 1fr);
   }
 }
@@ -847,6 +1011,10 @@
   .dashboard,
   .my-courses {
     margin: 0 5%;
+  }
+
+  .course-page__main {
+    margin: 20px 5% 40px;
   }
 
   .my-courses {

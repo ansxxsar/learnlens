@@ -6,7 +6,7 @@ only ever see courses they belong to.
 
 from dataclasses import dataclass
 
-from .models import Enrollment
+from .models import Assignment, Enrollment
 
 
 @dataclass(frozen=True)
@@ -30,10 +30,12 @@ def _counts_toward(student, enrollment):
     return enrollment.section_id is None or student.section_id == enrollment.section_id
 
 
-def get_my_courses(user):
-    enrollments = list(
-        user.enrollments.select_related('course', 'section').order_by('course__code', 'course__id')
-    )
+def get_my_courses(user, course_id=None):
+    """All of the user's courses, or only `course_id` when it is given."""
+    enrollments = user.enrollments.select_related('course', 'section').order_by('course__code', 'course__id')
+    if course_id is not None:
+        enrollments = enrollments.filter(course_id=course_id)
+    enrollments = list(enrollments)
     course_ids = [enrollment.course_id for enrollment in enrollments]
 
     # Two queries for all courses together, instead of two per course.
@@ -66,3 +68,14 @@ def get_my_courses(user):
 
         courses.append(MyCourse(enrollment, names, student_count))
     return courses
+
+
+# Students never see drafts (not ready) or archived work (withdrawn).
+STUDENT_VISIBLE_STATUSES = (Assignment.Status.PUBLISHED, Assignment.Status.CLOSED)
+
+
+def get_course_assignments(course_id, role):
+    assignments = Assignment.objects.filter(course_id=course_id).order_by('due_at', 'id')
+    if role != Enrollment.Role.INSTRUCTOR:
+        assignments = assignments.filter(status__in=STUDENT_VISIBLE_STATUSES)
+    return assignments
