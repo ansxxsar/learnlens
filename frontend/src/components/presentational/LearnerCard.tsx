@@ -1,15 +1,10 @@
 import { useRef } from "react";
 import type { PointerEvent } from "react";
 import type { StudentProfile } from "../../types";
+import { accountTypeLabels } from "../../utils/roles";
 import { Avatar } from "./Avatar";
 
 const MAX_TILT_DEGREES = 7;
-
-const roleLabels: Record<StudentProfile["accountType"], string> = {
-  student: "Student",
-  teacher: "Teacher",
-  admin: "Admin",
-};
 
 interface LearnerCardProps {
   student: StudentProfile;
@@ -58,7 +53,7 @@ export function LearnerCard({ student }: LearnerCardProps) {
       <div className="learner-card__brand">
         <span>LearnLens</span>
         <span className="learner-card__role">
-          {roleLabels[student.accountType]}
+          {accountTypeLabels[student.accountType]}
         </span>
       </div>
 

@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import type { StudentProfile, StudentProgress } from "../../types";
 import { Avatar } from "./Avatar";
+import { RoleBadge } from "./RoleBadge";
 
 interface UserMenuProps {
   student: StudentProfile;
@@ -58,7 +59,10 @@ export function UserMenu({ student, progress }: UserMenuProps) {
       >
         <div>
           <strong>{student.name}</strong>
-          <span>{student.course}</span>
+          <div className="student-profile__meta">
+            <RoleBadge accountType={student.accountType} />
+            <span>{student.course}</span>
+          </div>
         </div>
         <Avatar
           className="student-profile__avatar"
@@ -78,6 +82,7 @@ export function UserMenu({ student, progress }: UserMenuProps) {
             <div>
               <strong>{student.name}</strong>
               <span>{student.email}</span>
+              <RoleBadge accountType={student.accountType} />
             </div>
           </div>
 

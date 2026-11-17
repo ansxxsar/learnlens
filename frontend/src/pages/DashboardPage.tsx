@@ -24,7 +24,7 @@ export function DashboardPage() {
 
       <section className="hero" id="dashboard">
         <div>
-          <span className="eyebrow">Welcome back</span>
+          <span className="eyebrow">Student · Welcome back</span>
           <h1>Turn every attempt into progress.</h1>
           <p>
             Write code in Python, Java, C++, JavaScript, HTML, or CSS, understand
