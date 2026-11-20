@@ -1,5 +1,13 @@
 import type {
   ApiAssignment,
+  ApiPublicTestCase,
+  ApiRubricCriterion,
+  ApiTestCase,
+  AssignmentTestCase,
+  PublicTestCase,
+  RubricCriterion,
+  RubricCriterionInput,
+  TestCaseInput,
   ApiDailyProgress,
   ApiSubmission,
   ApiCourse,
@@ -220,6 +228,168 @@ export const deleteAssignment = async (
   assignmentId: number,
 ): Promise<void> => {
   await sendWithCsrf(assignmentsPath(courseId, assignmentId), {
+    method: "DELETE",
+  });
+};
+
+// Rubric criteria and test cases. Only instructors may change them; the API
+// gives students the rubric and the public tests only.
+
+const toRubricCriterion = (
+  criterion: ApiRubricCriterion,
+): RubricCriterion => ({
+  id: criterion.id,
+  title: criterion.title,
+  description: criterion.description,
+  maxPoints: criterion.max_points,
+  position: criterion.position,
+});
+
+const toCriterionBody = (input: Partial<RubricCriterionInput>) => ({
+  title: input.title,
+  description: input.description,
+  max_points: input.maxPoints,
+});
+
+const rubricPath = (
+  courseId: number,
+  assignmentId: number,
+  criterionId?: number,
+): string =>
+  `${assignmentsPath(courseId, assignmentId)}/rubric` +
+  (criterionId === undefined ? "" : `/${criterionId}`);
+
+export const fetchRubric = async (
+  courseId: number,
+  assignmentId: number,
+): Promise<RubricCriterion[]> => {
+  const response = await sendRequest(rubricPath(courseId, assignmentId));
+  return ((await response.json()) as ApiRubricCriterion[]).map(
+    toRubricCriterion,
+  );
+};
+
+export const createCriterion = async (
+  courseId: number,
+  assignmentId: number,
+  input: RubricCriterionInput,
+): Promise<RubricCriterion> => {
+  const response = await postJson(
+    rubricPath(courseId, assignmentId),
+    toCriterionBody(input),
+  );
+  return toRubricCriterion((await response.json()) as ApiRubricCriterion);
+};
+
+export const updateCriterion = async (
+  courseId: number,
+  assignmentId: number,
+  criterionId: number,
+  input: RubricCriterionInput,
+): Promise<RubricCriterion> => {
+  const response = await sendJson(
+    rubricPath(courseId, assignmentId, criterionId),
+    "PATCH",
+    toCriterionBody(input),
+  );
+  return toRubricCriterion((await response.json()) as ApiRubricCriterion);
+};
+
+export const deleteCriterion = async (
+  courseId: number,
+  assignmentId: number,
+  criterionId: number,
+): Promise<void> => {
+  await sendWithCsrf(rubricPath(courseId, assignmentId, criterionId), {
+    method: "DELETE",
+  });
+};
+
+const toPublicTestCase = (test: ApiPublicTestCase): PublicTestCase => ({
+  id: test.id,
+  name: test.name,
+  stdinInput: test.stdin_input,
+  expectedOutput: test.expected_output,
+});
+
+const toTestCase = (test: ApiTestCase): AssignmentTestCase => ({
+  ...toPublicTestCase(test),
+  visibility: test.visibility,
+  weight: test.weight,
+  timeLimitMs: test.time_limit_ms,
+  criterionId: test.criterion,
+});
+
+const toTestCaseBody = (input: TestCaseInput) => ({
+  name: input.name,
+  visibility: input.visibility,
+  stdin_input: input.stdinInput,
+  expected_output: input.expectedOutput,
+  weight: input.weight,
+  time_limit_ms: input.timeLimitMs,
+  criterion: input.criterionId,
+});
+
+const testsPath = (
+  courseId: number,
+  assignmentId: number,
+  testId?: number,
+): string =>
+  `${assignmentsPath(courseId, assignmentId)}/tests` +
+  (testId === undefined ? "" : `/${testId}`);
+
+// Instructors: every test of the assignment, hidden ones included.
+export const fetchTestCases = async (
+  courseId: number,
+  assignmentId: number,
+): Promise<AssignmentTestCase[]> => {
+  const response = await sendRequest(testsPath(courseId, assignmentId));
+  return ((await response.json()) as ApiTestCase[]).map(toTestCase);
+};
+
+// Students: the server already left out hidden tests.
+export const fetchPublicTestCases = async (
+  courseId: number,
+  assignmentId: number,
+): Promise<PublicTestCase[]> => {
+  const response = await sendRequest(testsPath(courseId, assignmentId));
+  return ((await response.json()) as ApiPublicTestCase[]).map(
+    toPublicTestCase,
+  );
+};
+
+export const createTestCase = async (
+  courseId: number,
+  assignmentId: number,
+  input: TestCaseInput,
+): Promise<AssignmentTestCase> => {
+  const response = await postJson(
+    testsPath(courseId, assignmentId),
+    toTestCaseBody(input),
+  );
+  return toTestCase((await response.json()) as ApiTestCase);
+};
+
+export const updateTestCase = async (
+  courseId: number,
+  assignmentId: number,
+  testId: number,
+  input: TestCaseInput,
+): Promise<AssignmentTestCase> => {
+  const response = await sendJson(
+    testsPath(courseId, assignmentId, testId),
+    "PATCH",
+    toTestCaseBody(input),
+  );
+  return toTestCase((await response.json()) as ApiTestCase);
+};
+
+export const deleteTestCase = async (
+  courseId: number,
+  assignmentId: number,
+  testId: number,
+): Promise<void> => {
+  await sendWithCsrf(testsPath(courseId, assignmentId, testId), {
     method: "DELETE",
   });
 };

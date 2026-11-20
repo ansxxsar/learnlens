@@ -7,8 +7,9 @@ only ever see courses they belong to.
 from dataclasses import dataclass
 
 from django.db.models import Count, Q
+from django.shortcuts import get_object_or_404
 
-from .models import Assignment, Enrollment
+from .models import Assignment, Enrollment, TestCase
 
 
 @dataclass(frozen=True)
@@ -84,3 +85,25 @@ def get_course_assignments(course_id, user, role):
             attempt_count=Count('submissions', filter=Q(submissions__student=user))
         )
     return assignments
+
+
+def get_visible_assignment(course_id, assignment_id, role):
+    """The assignment inside the URL's course, if this role may see it.
+    Anything else, such as a draft for a student, answers 404."""
+    assignments = Assignment.objects.filter(course_id=course_id)
+    if role != Enrollment.Role.INSTRUCTOR:
+        assignments = assignments.filter(status__in=STUDENT_VISIBLE_STATUSES)
+    return get_object_or_404(assignments, id=assignment_id)
+
+
+def get_rubric(assignment):
+    return assignment.rubric_criteria.order_by('position', 'id')
+
+
+def get_test_cases(assignment, role):
+    test_cases = assignment.test_cases.order_by('id')
+    if role != Enrollment.Role.INSTRUCTOR:
+        # Security: hidden tests are filtered out in the query itself, so
+        # their inputs and expected outputs never leave the database.
+        test_cases = test_cases.filter(visibility=TestCase.Visibility.PUBLIC)
+    return test_cases
