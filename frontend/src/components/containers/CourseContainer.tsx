@@ -11,6 +11,7 @@ import type { StatusAction } from "../../utils/assignments";
 import { AssignmentForm } from "../presentational/AssignmentForm";
 import { CourseAssignmentItem } from "../presentational/CourseAssignmentItem";
 import { CourseCard } from "../presentational/CourseCard";
+import { AssignmentDetailsContainer } from "./AssignmentDetailsContainer";
 import { SubmissionContainer } from "./SubmissionContainer";
 
 interface CourseContainerProps {
@@ -39,6 +40,8 @@ export function CourseContainer({ courseId }: CourseContainerProps) {
   const [busyId, setBusyId] = useState<number | null>(null);
   // The assignment whose submission form a student has open.
   const [submittingId, setSubmittingId] = useState<number | null>(null);
+  // The assignment whose rubric and tests panel is open.
+  const [detailsId, setDetailsId] = useState<number | null>(null);
 
   if (isLoading) {
     return <p className="state-message">Loading the course...</p>;
@@ -152,6 +155,22 @@ export function CourseContainer({ courseId }: CourseContainerProps) {
               onAction={(action) => void handleAction(assignment, action)}
               isSubmitting={submittingId === assignment.id}
               onStartSubmission={() => setSubmittingId(assignment.id)}
+              isDetailsOpen={detailsId === assignment.id}
+              onToggleDetails={() =>
+                setDetailsId((current) =>
+                  current === assignment.id ? null : assignment.id,
+                )
+              }
+              details={
+                detailsId === assignment.id && (
+                  <AssignmentDetailsContainer
+                    courseId={courseId}
+                    assignmentId={assignment.id}
+                    canManage={canManage}
+                    isReadOnly={assignment.status === "archived"}
+                  />
+                )
+              }
             >
               {submittingId === assignment.id && (
                 <SubmissionContainer

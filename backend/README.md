@@ -113,6 +113,37 @@ Assignment rules (in `courses/services.py`):
 - Assignments belong to the whole course, so every instructor of the course can manage them.
 - Responses never include test cases, so hidden tests cannot leak through these endpoints.
 
+### Rubric and tests
+
+Each assignment has a rubric (scored criteria) and test cases (an input and the exact output expected). The
+tests are what the execution workers will run once they exist.
+
+| Endpoint | Purpose | Success |
+|---|---|---|
+| `GET /courses/{id}/assignments/{aid}/rubric` | Members: the criteria in `position` order | 200 |
+| `POST /courses/{id}/assignments/{aid}/rubric` | Instructors: body `{"title", "description", "max_points", "position"}` | 201 |
+| `PATCH /courses/{id}/assignments/{aid}/rubric/{cid}` | Instructors: any of the fields above | 200 |
+| `DELETE /courses/{id}/assignments/{aid}/rubric/{cid}` | Instructors: removes the criterion | 204 |
+| `GET /courses/{id}/assignments/{aid}/tests` | Instructors: every test. Students: public tests only | 200 |
+| `POST /courses/{id}/assignments/{aid}/tests` | Instructors: body `{"name", "visibility", "stdin_input", "expected_output", "weight", "time_limit_ms", "criterion"}` | 201 |
+| `PATCH /courses/{id}/assignments/{aid}/tests/{tid}` | Instructors: any of the fields above | 200 |
+| `DELETE /courses/{id}/assignments/{aid}/tests/{tid}` | Instructors: removes the test | 204 |
+
+- **Hidden tests never reach students.** The query itself filters them out, and students get only `id`,
+  `name`, `stdin_input` and `expected_output` of public tests.
+- New tests are `hidden` unless `"visibility": "public"` is sent.
+- Students can read the rubric and public tests of `published` and `closed` assignments only; others answer
+  404. Instructors can prepare them on drafts.
+- `max_points` and `weight` are between 0.01 and 1000. `time_limit_ms` is between 100 and 10,000, so one test
+  cannot hold a worker for long. Input and expected output are at most 20,000 characters each, and their
+  whitespace is kept exactly.
+- `criterion` links a test to a criterion of the same assignment, or is `null`. Deleting a criterion keeps
+  its tests and only unlinks them.
+- New criteria go to the end of the rubric unless `position` is sent.
+- The rubric and tests of an archived assignment cannot be changed. Tests can still be edited after
+  publishing; earlier attempts are not re-checked automatically.
+- Skills cannot be linked to criteria through the API yet (admin only).
+
 ## Submissions and daily progress API
 
 Students submit code to published assignments of their own courses. **The code is only stored.** Nothing in

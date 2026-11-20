@@ -1,7 +1,9 @@
+from decimal import Decimal
+
 from django.utils import timezone
 from rest_framework import serializers
 
-from .models import Assignment
+from .models import Assignment, TestCase
 
 
 class MyCourseSerializer(serializers.Serializer):
@@ -57,3 +59,71 @@ class AssignmentCreateSerializer(AssignmentWriteSerializer):
 
 class AssignmentUpdateSerializer(AssignmentWriteSerializer):
     status = serializers.ChoiceField(choices=Assignment.Status.choices, required=False)
+
+
+class RubricCriterionSerializer(serializers.Serializer):
+    """A rubric criterion. Course members may read the rubric, so students
+    know how their work is judged."""
+
+    id = serializers.IntegerField()
+    title = serializers.CharField()
+    description = serializers.CharField()
+    max_points = serializers.DecimalField(max_digits=6, decimal_places=2, coerce_to_string=False)
+    position = serializers.IntegerField()
+
+
+class RubricCriterionWriteSerializer(serializers.Serializer):
+    title = serializers.CharField(max_length=255)
+    description = serializers.CharField(max_length=2000, allow_blank=True, required=False)
+    max_points = serializers.DecimalField(
+        max_digits=6, decimal_places=2, min_value=Decimal('0.01'), max_value=Decimal('1000')
+    )
+    position = serializers.IntegerField(min_value=0, required=False)
+
+
+class InstructorTestCaseSerializer(serializers.Serializer):
+    """Every field of a test case, hidden ones included. Instructors only."""
+
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    visibility = serializers.CharField()
+    stdin_input = serializers.CharField()
+    expected_output = serializers.CharField()
+    weight = serializers.DecimalField(max_digits=6, decimal_places=2, coerce_to_string=False)
+    time_limit_ms = serializers.IntegerField()
+    criterion = serializers.IntegerField(source='criterion_id', allow_null=True)
+
+
+class PublicTestCaseSerializer(serializers.Serializer):
+    """A public test as students see it: an example input and output.
+
+    Security: only ever given public tests (see selectors.get_test_cases).
+    Hidden tests are never serialized for students.
+    """
+
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    stdin_input = serializers.CharField()
+    expected_output = serializers.CharField()
+
+
+# Enough for beginner exercises. Larger data belongs in files, not in a row.
+MAX_TEST_IO_LENGTH = 20_000
+
+
+class TestCaseWriteSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=255)
+    visibility = serializers.ChoiceField(choices=TestCase.Visibility.choices, required=False)
+    # Kept exactly as typed: spaces and newlines are part of the expected output.
+    stdin_input = serializers.CharField(
+        max_length=MAX_TEST_IO_LENGTH, allow_blank=True, trim_whitespace=False, required=False
+    )
+    expected_output = serializers.CharField(
+        max_length=MAX_TEST_IO_LENGTH, allow_blank=True, trim_whitespace=False, required=False
+    )
+    weight = serializers.DecimalField(
+        max_digits=6, decimal_places=2, min_value=Decimal('0.01'), max_value=Decimal('1000'), required=False
+    )
+    # Capped so one test cannot hold an execution worker for long.
+    time_limit_ms = serializers.IntegerField(min_value=100, max_value=10_000, required=False)
+    criterion = serializers.IntegerField(allow_null=True, required=False)

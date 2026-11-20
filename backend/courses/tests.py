@@ -11,7 +11,8 @@ from rest_framework.views import APIView
 
 from accounts.authentication import SessionAuth
 
-from .models import Assignment, Course, CourseSection, Enrollment
+from .models import Assignment, Course, CourseSection, Enrollment, RubricCriterion
+from .models import TestCase as TestCaseModel  # django.test.TestCase is already TestCase here
 from .permissions import IsCourseInstructor, IsCourseMember
 
 
@@ -412,3 +413,236 @@ class CourseAssignmentsApiTests(TestCase):
 
         self.assertEqual(response.status_code, 403)
         self.assertTrue(Assignment.objects.exists())
+
+
+class RubricAndTestsApiTests(TestCase):
+    """Instructors manage an assignment's rubric and tests. Students read the
+    rubric and only the public tests; hidden tests never reach them."""
+
+    def setUp(self):
+        self.course = Course.objects.create(code='CSS105', title='Introduction to Programming', term='Fall 2026')
+        self.other_course = Course.objects.create(code='CSS201', title='Data Structures', term='Fall 2026')
+        self.teacher = self.enroll('Teacher', Enrollment.Role.INSTRUCTOR)
+        self.student = self.enroll('Student', Enrollment.Role.STUDENT)
+        self.other_teacher = self.enroll('Other Teacher', Enrollment.Role.INSTRUCTOR, course=self.other_course)
+        self.assignment = self.make(Assignment.Status.PUBLISHED)
+
+    def enroll(self, name, role, course=None):
+        count = get_user_model().objects.count()
+        user = get_user_model().objects.create_user(
+            email=f'user{count}@sdu.edu.kz', full_name=name, password='test-pass-123'
+        )
+        Enrollment.objects.create(user=user, course=course or self.course, role=role)
+        return user
+
+    def make(self, status, course=None):
+        return Assignment.objects.create(
+            course=course or self.course,
+            title='Sum two numbers',
+            instructions='Read two numbers and print their sum.',
+            status=status,
+            due_at=timezone.now() + timedelta(days=7),
+        )
+
+    def url(self, kind, item=None, assignment=None):
+        assignment = assignment or self.assignment
+        base = f'/courses/{assignment.course_id}/assignments/{assignment.id}/{kind}'
+        return f'{base}/{item.id}' if item else base
+
+    def as_user(self, user):
+        self.client.force_login(user)
+        return self.client
+
+    def post(self, user, kind, body, assignment=None):
+        url = self.url(kind, assignment=assignment)
+        return self.as_user(user).post(url, body, content_type='application/json')
+
+    def patch(self, user, kind, item, body):
+        return self.as_user(user).patch(self.url(kind, item), body, content_type='application/json')
+
+    def criterion(self, title='Correct output', points='5', position=0, assignment=None):
+        return RubricCriterion.objects.create(
+            assignment=assignment or self.assignment, title=title, max_points=points, position=position
+        )
+
+    def test_case(self, name='Example', visibility=TestCaseModel.Visibility.PUBLIC, **fields):
+        return TestCaseModel.objects.create(assignment=self.assignment, name=name, visibility=visibility, **fields)
+
+    # Rubric
+
+    def test_instructor_adds_criteria_to_the_end_of_the_rubric(self):
+        first = self.post(self.teacher, 'rubric', {'title': 'Correct output', 'max_points': '6'})
+        second = self.post(self.teacher, 'rubric', {'title': 'Readable code', 'max_points': 4})
+
+        self.assertEqual(first.status_code, 201)
+        self.assertEqual(first.json()['max_points'], 6)
+        self.assertEqual([first.json()['position'], second.json()['position']], [0, 1])
+
+    def test_rubric_is_listed_in_position_order(self):
+        self.criterion('Second', position=1)
+        self.criterion('First', position=0)
+
+        titles = [c['title'] for c in self.as_user(self.student).get(self.url('rubric')).json()]
+
+        self.assertEqual(titles, ['First', 'Second'])
+
+    def test_criterion_points_must_be_positive(self):
+        response = self.post(self.teacher, 'rubric', {'title': 'Nothing', 'max_points': 0})
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('max_points', response.json())
+
+    def test_instructor_edits_and_deletes_a_criterion(self):
+        criterion = self.criterion()
+
+        edited = self.patch(self.teacher, 'rubric', criterion, {'title': 'Correct sum'})
+        deleted = self.as_user(self.teacher).delete(self.url('rubric', criterion))
+
+        self.assertEqual(edited.json()['title'], 'Correct sum')
+        self.assertEqual(deleted.status_code, 204)
+        self.assertFalse(RubricCriterion.objects.exists())
+
+    def test_deleting_a_criterion_keeps_its_tests(self):
+        criterion = self.criterion()
+        test_case = self.test_case(criterion=criterion)
+
+        self.as_user(self.teacher).delete(self.url('rubric', criterion))
+
+        test_case.refresh_from_db()
+        self.assertIsNone(test_case.criterion_id)
+
+    def test_student_cannot_change_the_rubric(self):
+        criterion = self.criterion()
+
+        self.assertEqual(self.post(self.student, 'rubric', {'title': 'X', 'max_points': 1}).status_code, 403)
+        self.assertEqual(self.patch(self.student, 'rubric', criterion, {'title': 'X'}).status_code, 403)
+        self.assertEqual(self.as_user(self.student).delete(self.url('rubric', criterion)).status_code, 403)
+
+    def test_other_course_instructor_cannot_read_or_change_the_rubric(self):
+        self.assertEqual(self.as_user(self.other_teacher).get(self.url('rubric')).status_code, 403)
+        self.assertEqual(self.post(self.other_teacher, 'rubric', {'title': 'X', 'max_points': 1}).status_code, 403)
+
+    def test_criterion_is_not_found_through_another_assignment(self):
+        other_assignment = self.make(Assignment.Status.DRAFT)
+        criterion = self.criterion(assignment=other_assignment)
+
+        response = self.patch(self.teacher, 'rubric', criterion, {'title': 'X'})
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_archived_assignment_rubric_is_frozen(self):
+        criterion = self.criterion()
+        self.assignment.status = Assignment.Status.ARCHIVED
+        self.assignment.save()
+
+        self.assertEqual(self.post(self.teacher, 'rubric', {'title': 'X', 'max_points': 1}).status_code, 400)
+        self.assertEqual(self.patch(self.teacher, 'rubric', criterion, {'title': 'X'}).status_code, 400)
+        self.assertEqual(self.as_user(self.teacher).delete(self.url('rubric', criterion)).status_code, 400)
+
+    # Test cases
+
+    def test_instructor_adds_a_hidden_test_by_default(self):
+        criterion = self.criterion()
+
+        response = self.post(
+            self.teacher,
+            'tests',
+            {
+                'name': 'Big numbers',
+                'stdin_input': '1000 2000\n',
+                'expected_output': '3000\n',
+                'criterion': criterion.id,
+            },
+        )
+
+        self.assertEqual(response.status_code, 201)
+        body = response.json()
+        self.assertEqual(body['visibility'], 'hidden')
+        self.assertEqual(body['criterion'], criterion.id)
+        self.assertEqual(body['time_limit_ms'], 2000)
+
+    def test_test_input_and_output_keep_their_whitespace(self):
+        response = self.post(
+            self.teacher, 'tests', {'name': 'Spaces', 'stdin_input': '  1 2\n', 'expected_output': ' 3\n\n'}
+        )
+
+        self.assertEqual(response.json()['stdin_input'], '  1 2\n')
+        self.assertEqual(response.json()['expected_output'], ' 3\n\n')
+
+    def test_time_limit_is_capped(self):
+        response = self.post(self.teacher, 'tests', {'name': 'Slow', 'time_limit_ms': 60_000})
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('time_limit_ms', response.json())
+
+    def test_test_cannot_use_a_criterion_from_another_assignment(self):
+        foreign = self.criterion(assignment=self.make(Assignment.Status.DRAFT))
+
+        response = self.post(self.teacher, 'tests', {'name': 'X', 'criterion': foreign.id})
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('criterion', response.json())
+
+    def test_instructor_edits_unlinks_and_deletes_a_test(self):
+        test_case = self.test_case(criterion=self.criterion())
+
+        edited = self.patch(self.teacher, 'tests', test_case, {'visibility': 'hidden', 'criterion': None})
+        deleted = self.as_user(self.teacher).delete(self.url('tests', test_case))
+
+        self.assertEqual(edited.json()['visibility'], 'hidden')
+        self.assertIsNone(edited.json()['criterion'])
+        self.assertEqual(deleted.status_code, 204)
+
+    def test_instructor_sees_hidden_tests(self):
+        self.test_case('Example')
+        self.test_case('Secret', TestCaseModel.Visibility.HIDDEN, stdin_input='7 8', expected_output='15')
+
+        names = [t['name'] for t in self.as_user(self.teacher).get(self.url('tests')).json()]
+
+        self.assertEqual(names, ['Example', 'Secret'])
+
+    def test_student_sees_only_public_tests_without_hidden_data(self):
+        self.test_case('Example', stdin_input='1 2', expected_output='3')
+        self.test_case(
+            'Secret', TestCaseModel.Visibility.HIDDEN, stdin_input='SECRET-IN', expected_output='SECRET-OUT'
+        )
+
+        response = self.as_user(self.student).get(self.url('tests'))
+
+        self.assertEqual(response.status_code, 200)
+        [public] = response.json()
+        self.assertEqual(set(public), {'id', 'name', 'stdin_input', 'expected_output'})
+        self.assertEqual(public['name'], 'Example')
+        self.assertEqual((public['stdin_input'], public['expected_output']), ('1 2', '3'))
+        for secret in ('Secret', 'SECRET-IN', 'SECRET-OUT'):
+            self.assertNotIn(secret, response.content.decode())
+
+    def test_student_cannot_change_tests(self):
+        test_case = self.test_case()
+
+        self.assertEqual(self.post(self.student, 'tests', {'name': 'X'}).status_code, 403)
+        self.assertEqual(self.patch(self.student, 'tests', test_case, {'name': 'X'}).status_code, 403)
+        self.assertEqual(self.as_user(self.student).delete(self.url('tests', test_case)).status_code, 403)
+
+    def test_student_cannot_read_a_draft_assignments_rubric_or_tests(self):
+        draft = self.make(Assignment.Status.DRAFT)
+
+        for kind in ('rubric', 'tests'):
+            response = self.as_user(self.student).get(self.url(kind, assignment=draft))
+            self.assertEqual(response.status_code, 404)
+
+    def test_instructor_can_prepare_a_draft(self):
+        draft = self.make(Assignment.Status.DRAFT)
+
+        response = self.post(self.teacher, 'tests', {'name': 'Example'}, assignment=draft)
+
+        self.assertEqual(response.status_code, 201)
+
+    def test_test_is_not_found_through_another_course(self):
+        test_case = self.test_case()
+        foreign_assignment = self.make(Assignment.Status.PUBLISHED, course=self.other_course)
+        url = f'/courses/{self.other_course.id}/assignments/{foreign_assignment.id}/tests/{test_case.id}'
+
+        response = self.as_user(self.other_teacher).patch(url, {'name': 'X'}, content_type='application/json')
+
+        self.assertEqual(response.status_code, 404)

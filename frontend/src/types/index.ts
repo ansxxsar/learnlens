@@ -174,3 +174,65 @@ export interface DailyProgress {
   completedTasks: number;
   totalTasks: number;
 }
+
+// Rubric criteria and test cases of one assignment.
+export interface ApiRubricCriterion {
+  id: number;
+  title: string;
+  description: string;
+  max_points: number;
+  position: number;
+}
+
+export interface RubricCriterion {
+  id: number;
+  title: string;
+  description: string;
+  maxPoints: number;
+  position: number;
+}
+
+export interface RubricCriterionInput {
+  title: string;
+  description: string;
+  maxPoints: number;
+}
+
+export type TestVisibility = "public" | "hidden";
+
+// Students only ever receive public tests, and only these four fields.
+export interface ApiPublicTestCase {
+  id: number;
+  name: string;
+  stdin_input: string;
+  expected_output: string;
+}
+
+export interface ApiTestCase extends ApiPublicTestCase {
+  visibility: TestVisibility;
+  weight: number;
+  time_limit_ms: number;
+  criterion: number | null;
+}
+
+export interface PublicTestCase {
+  id: number;
+  name: string;
+  stdinInput: string;
+  expectedOutput: string;
+}
+
+export interface TestCaseInput {
+  name: string;
+  visibility: TestVisibility;
+  stdinInput: string;
+  expectedOutput: string;
+  weight: number;
+  timeLimitMs: number;
+  criterionId: number | null;
+}
+
+// The instructor's view of a test, hidden ones included.
+export interface AssignmentTestCase extends TestCaseInput {
+  id: number;
+}
