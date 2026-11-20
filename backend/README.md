@@ -9,6 +9,7 @@ Apps:
   `skills`, `assignments`, `rubric_criteria`, `test_cases`
 - `submissions` – attempts and their results: `submissions`, `submission_files`, `test_results`
 - `execution` – the Celery worker that runs attempts in isolated Docker containers (no tables)
+- `feedback` – feedback on each attempt: `feedback`, `feedback_items`
 
 Table and column names follow [docs/erd/learnlens-erd.drawio](../docs/erd/learnlens-erd.drawio).
 
@@ -229,5 +230,38 @@ and its stderr. Hidden tests are named "Hidden test 1, 2, ..." and include only 
 `runtime_ms`, because a program can print its secret input. The only exception is a compiler message,
 which depends on the code alone. Each attempt also has `passed_count` and `test_count`.
 
+After the tests run, the worker also stores [feedback](#feedback) for the attempt.
+
 Known limits: Java and C++ are compiled again for each test; changing tests does not re-run old attempts;
 instructors cannot see their students' results in the app yet.
+
+## Feedback
+
+Once an attempt's tests have run, `feedback/rules.py` turns the results into feedback: a summary plus
+items of kind `strength`, `issue` and `next_step` (always exactly one, last). It is stored with
+`source = "rules"` and `evidence_version = "rules-v1"`, and appears as `feedback` on each attempt in
+`GET .../submissions` (`null` until the tests have run, or when no test ran).
+
+The rules are deterministic, so every message can be traced to its evidence. They:
+
+- read the line and message of compiler errors (C++, Java) and exceptions (Python, JavaScript, Java), and
+  explain common exceptions in plain words;
+- report a compile error, or the same crash in several tests, once;
+- name common output mistakes in public tests: nothing printed, letter case, spacing, extra prompt text,
+  number format, line count, or the first differing line;
+- point to edge cases when the examples pass but hidden tests fail;
+- count progress since the previous attempt, criteria whose tests all pass, and remind the student of
+  criteria that no test checks.
+
+The assignment's `feedback_depth` controls how much is said: `hint` gives the summary and the next step
+only, `guided` adds strengths and issues, and `detailed` also quotes expected and actual values and the
+exception messages of public tests.
+
+**Hidden tests.** Their output and stderr can contain the secret input, so for hidden tests the rules use
+only the verdict, the exception type and the line in the student's own code. They are named "Hidden test
+N" in every message.
+
+Feedback never changes test results or grades. If building it fails, the error is logged and the attempt
+keeps its results. Items link to their rubric criterion, test result and, for line numbers, the entry
+file. Feedback with `source = "ai"` must record `model_name` and `prompt_version` (database constraint);
+AI feedback is not built yet.

@@ -1,5 +1,6 @@
 import type { Submission, TestResult } from "../../types";
 import { errorLabels } from "../../utils/testResults";
+import { FeedbackPanel } from "./FeedbackPanel";
 
 interface AttemptResultsProps {
   attempt: Submission;
@@ -117,6 +118,8 @@ export function AttemptResults({ attempt }: AttemptResultsProps) {
           </span>
         )}
       </div>
+
+      {attempt.feedback && <FeedbackPanel feedback={attempt.feedback} />}
 
       {attempt.testCount === 0 ? (
         <p className="state-message">

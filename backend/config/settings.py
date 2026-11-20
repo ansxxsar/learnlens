@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'courses',
     'submissions',
     'execution',
+    'feedback',
 ]
 
 # Custom user model (table "users" in the ERD). Must be set before the first migrate.

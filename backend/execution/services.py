@@ -7,6 +7,7 @@ import logging
 
 from django.db import transaction
 
+from feedback.services import safely_create_feedback
 from submissions.languages import LANGUAGE_BY_FILE
 from submissions.models import Submission, TestResult
 
@@ -70,3 +71,5 @@ def execute_submission(submission_id):
         )
         submission.status = Status.COMPLETED
         submission.save(update_fields=['status'])
+
+    safely_create_feedback(submission)

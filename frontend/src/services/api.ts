@@ -436,6 +436,16 @@ const toSubmission = (submission: ApiSubmission): Submission => ({
     actualOutput: result.actual_output,
     errorOutput: result.error_output,
   })),
+  feedback: submission.feedback && {
+    source: submission.feedback.source,
+    summary: submission.feedback.summary,
+    items: submission.feedback.items.map((item) => ({
+      kind: item.kind,
+      message: item.message,
+      lineStart: item.line_start,
+      criterionTitle: item.criterion_title,
+    })),
+  },
 });
 
 export const fetchMyAttempts = async (
