@@ -22,7 +22,7 @@ def get_my_attempts(assignment, student):
     return (
         Submission.objects.filter(assignment=assignment, student=student)
         .select_related('feedback')
-        .prefetch_related('files', 'test_results__test_case', 'feedback__items__criterion')
+        .prefetch_related('files', 'test_results__test_case', 'feedback__items__criterion', 'criterion_scores__criterion')
         .order_by('-attempt_number')
     )
 

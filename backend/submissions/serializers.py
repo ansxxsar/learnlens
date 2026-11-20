@@ -83,6 +83,28 @@ class SubmissionSerializer(serializers.Serializer):
     test_count = serializers.SerializerMethodField()
     results = serializers.SerializerMethodField()
     feedback = serializers.SerializerMethodField()
+    grade = serializers.SerializerMethodField()
+
+    def get_grade(self, submission):
+        # Scores exist only after the instructor approved them, so an
+        # unapproved suggestion never reaches the student.
+        scores = sorted(
+            submission.criterion_scores.all(), key=lambda score: (score.criterion.position, score.criterion_id)
+        )
+        if not scores:
+            return None
+        return {
+            'points': float(sum(score.final_points for score in scores)),
+            'max_points': float(sum(score.criterion.max_points for score in scores)),
+            'criteria': [
+                {
+                    'title': score.criterion.title,
+                    'points': float(score.final_points),
+                    'max_points': float(score.criterion.max_points),
+                }
+                for score in scores
+            ],
+        }
 
     def get_feedback(self, submission):
         # Absent until the tests have run, or when no test ran.

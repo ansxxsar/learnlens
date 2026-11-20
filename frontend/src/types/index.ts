@@ -192,6 +192,11 @@ export interface ApiSubmission {
   test_count: number;
   results: ApiTestResult[];
   feedback: ApiFeedback | null;
+  grade: {
+    points: number;
+    max_points: number;
+    criteria: { title: string; points: number; max_points: number }[];
+  } | null;
 }
 
 export interface Submission {
@@ -205,6 +210,8 @@ export interface Submission {
   testCount: number;
   results: TestResult[];
   feedback: Feedback | null;
+  // Only after the instructor approved it.
+  grade: StudentGrade | null;
 }
 
 // GET /progress: daily practice, counted from submissions. Not a grade.
@@ -306,4 +313,148 @@ export interface TestCaseInput {
 // The instructor's view of a test, hidden ones included.
 export interface AssignmentTestCase extends TestCaseInput {
   id: number;
+}
+
+// Instructor gradebook. Points are suggestions until the instructor approves.
+export interface AttemptSummary {
+  id: number;
+  attemptNumber: number;
+  status: Submission["status"];
+  submittedAt: string;
+  passedCount: number;
+  testCount: number;
+}
+
+export interface GradebookCell {
+  assignmentId: number;
+  studentId: number;
+  latest: AttemptSummary;
+  // Suggested points of the criteria tests can check. needsReview means some
+  // criterion has no suggestion and waits for the instructor.
+  suggestedPoints: number | null;
+  needsReview: boolean;
+  grade: { submissionId: number; points: number; isOutdated: boolean } | null;
+}
+
+export interface Gradebook {
+  assignments: {
+    id: number;
+    title: string;
+    status: CourseAssignmentStatus;
+    dueAt: string;
+    maxPoints: number;
+  }[];
+  students: { id: number; fullName: string; sectionCode: string | null }[];
+  cells: GradebookCell[];
+}
+
+export interface ReviewCriterion {
+  id: number;
+  title: string;
+  description: string;
+  maxPoints: number;
+  isTested: boolean;
+  suggestedPoints: number | null;
+  finalPoints: number | null;
+  overrideReason: string | null;
+}
+
+export interface ReviewResult {
+  testName: string;
+  visibility: TestVisibility;
+  passed: boolean;
+  errorType: TestErrorType | null;
+  runtimeMs: number | null;
+  stdinInput: string;
+  expectedOutput: string;
+  actualOutput: string | null;
+  errorOutput: string | null;
+}
+
+export interface AttemptReview extends AttemptSummary {
+  student: { id: number; fullName: string };
+  assignment: { id: number; title: string };
+  language: ProgrammingLanguage | null;
+  code: string;
+  results: ReviewResult[];
+  feedback: Feedback | null;
+  isGraded: boolean;
+  criteria: ReviewCriterion[];
+  attempts: AttemptSummary[];
+}
+
+export interface ScoreInput {
+  criterion: number;
+  points: number | null;
+  reason: string;
+}
+
+export interface StudentGrade {
+  points: number;
+  maxPoints: number;
+  criteria: { title: string; points: number; maxPoints: number }[];
+}
+
+// Raw API shapes for the gradebook (snake_case, as the server sends them).
+export interface ApiAttemptSummary {
+  id: number;
+  attempt_number: number;
+  status: Submission["status"];
+  submitted_at: string;
+  passed_count: number;
+  test_count: number;
+}
+
+export interface ApiGradebook {
+  assignments: {
+    id: number;
+    title: string;
+    status: CourseAssignmentStatus;
+    due_at: string;
+    max_points: number;
+  }[];
+  students: { id: number; full_name: string; section_code: string | null }[];
+  cells: {
+    assignment_id: number;
+    student_id: number;
+    latest: ApiAttemptSummary;
+    suggested_points: number | null;
+    needs_review: boolean;
+    grade: {
+      submission_id: number;
+      points: number;
+      is_outdated: boolean;
+    } | null;
+  }[];
+}
+
+export interface ApiAttemptReview extends ApiAttemptSummary {
+  student: { id: number; full_name: string };
+  assignment: { id: number; title: string };
+  language: ProgrammingLanguage | null;
+  code: string;
+  results: {
+    test_name: string;
+    visibility: TestVisibility;
+    passed: boolean;
+    error_type: TestErrorType | null;
+    runtime_ms: number | null;
+    stdin_input: string;
+    expected_output: string;
+    actual_output: string | null;
+    error_output: string | null;
+  }[];
+  feedback: ApiFeedback | null;
+  is_graded: boolean;
+  criteria: {
+    id: number;
+    title: string;
+    description: string;
+    max_points: number;
+    is_tested: boolean;
+    suggested_points: number | null;
+    final_points: number | null;
+    override_reason: string | null;
+  }[];
+  attempts: ApiAttemptSummary[];
 }

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useCourse } from "../../hooks/useCourse";
 import { useSubmitStatus } from "../../hooks/useSubmitStatus";
 import {
@@ -110,14 +111,24 @@ export function CourseContainer({ courseId }: CourseContainerProps) {
             <span className="eyebrow">{course.code}</span>
             <h2 id="assignments-title">Assignments</h2>
           </div>
-          {canManage && formTarget === null && (
-            <button
-              className="primary-button"
-              type="button"
-              onClick={() => openForm("new")}
-            >
-              New assignment
-            </button>
+          {canManage && (
+            <div className="course-page__heading-actions">
+              <Link
+                className="secondary-button"
+                to={`/course/${courseId}/gradebook`}
+              >
+                Gradebook
+              </Link>
+              {formTarget === null && (
+                <button
+                  className="primary-button"
+                  type="button"
+                  onClick={() => openForm("new")}
+                >
+                  New assignment
+                </button>
+              )}
+            </div>
           )}
         </div>
 
