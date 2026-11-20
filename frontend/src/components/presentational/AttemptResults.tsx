@@ -61,8 +61,8 @@ function ResultItem({ result }: { result: TestResult }) {
       )}
       {!result.passed && result.isHidden && !result.errorOutput && (
         <p className="auth-form__hint">
-          The input of hidden tests is not shown. Check edge cases such as
-          empty input, negative numbers or very large values.
+          The input of hidden tests is not shown. Check edge cases such as empty
+          input, negative numbers or very large values.
         </p>
       )}
     </li>
@@ -118,6 +118,22 @@ export function AttemptResults({ attempt }: AttemptResultsProps) {
           </span>
         )}
       </div>
+
+      {attempt.grade && (
+        <div className="student-grade" role="status">
+          <strong>
+            Grade: {attempt.grade.points} / {attempt.grade.maxPoints}
+          </strong>
+          <span className="auth-form__hint">Approved by your teacher</span>
+          <ul>
+            {attempt.grade.criteria.map((criterion) => (
+              <li key={criterion.title}>
+                {criterion.title}: {criterion.points} / {criterion.maxPoints}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {attempt.feedback && <FeedbackPanel feedback={attempt.feedback} />}
 

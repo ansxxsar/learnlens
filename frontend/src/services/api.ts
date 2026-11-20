@@ -1,4 +1,11 @@
 import type {
+  ApiAttemptReview,
+  ApiAttemptSummary,
+  ApiGradebook,
+  AttemptReview,
+  AttemptSummary,
+  Gradebook,
+  ScoreInput,
   ApiAssignment,
   ApiPublicTestCase,
   ApiRubricCriterion,
@@ -235,9 +242,7 @@ export const deleteAssignment = async (
 // Rubric criteria and test cases. Only instructors may change them; the API
 // gives students the rubric and the public tests only.
 
-const toRubricCriterion = (
-  criterion: ApiRubricCriterion,
-): RubricCriterion => ({
+const toRubricCriterion = (criterion: ApiRubricCriterion): RubricCriterion => ({
   id: criterion.id,
   title: criterion.title,
   description: criterion.description,
@@ -353,9 +358,7 @@ export const fetchPublicTestCases = async (
   assignmentId: number,
 ): Promise<PublicTestCase[]> => {
   const response = await sendRequest(testsPath(courseId, assignmentId));
-  return ((await response.json()) as ApiPublicTestCase[]).map(
-    toPublicTestCase,
-  );
+  return ((await response.json()) as ApiPublicTestCase[]).map(toPublicTestCase);
 };
 
 export const createTestCase = async (
@@ -444,6 +447,15 @@ const toSubmission = (submission: ApiSubmission): Submission => ({
       message: item.message,
       lineStart: item.line_start,
       criterionTitle: item.criterion_title,
+    })),
+  },
+  grade: submission.grade && {
+    points: submission.grade.points,
+    maxPoints: submission.grade.max_points,
+    criteria: submission.grade.criteria.map((criterion) => ({
+      title: criterion.title,
+      points: criterion.points,
+      maxPoints: criterion.max_points,
     })),
   },
 });
@@ -558,4 +570,118 @@ export const changePassword = async (
     current_password: currentPassword,
     new_password: newPassword,
   });
+};
+
+// Instructor gradebook. The API checks that the user teaches the course and
+// limits it to their own students.
+
+const toAttemptSummary = (attempt: ApiAttemptSummary): AttemptSummary => ({
+  id: attempt.id,
+  attemptNumber: attempt.attempt_number,
+  status: attempt.status,
+  submittedAt: attempt.submitted_at,
+  passedCount: attempt.passed_count,
+  testCount: attempt.test_count,
+});
+
+export const fetchGradebook = async (courseId: number): Promise<Gradebook> => {
+  const response = await sendRequest(`/courses/${courseId}/gradebook`);
+  const body = (await response.json()) as ApiGradebook;
+  return {
+    assignments: body.assignments.map((assignment) => ({
+      id: assignment.id,
+      title: assignment.title,
+      status: assignment.status,
+      dueAt: assignment.due_at,
+      maxPoints: assignment.max_points,
+    })),
+    students: body.students.map((student) => ({
+      id: student.id,
+      fullName: student.full_name,
+      sectionCode: student.section_code,
+    })),
+    cells: body.cells.map((cell) => ({
+      assignmentId: cell.assignment_id,
+      studentId: cell.student_id,
+      latest: toAttemptSummary(cell.latest),
+      suggestedPoints: cell.suggested_points,
+      needsReview: cell.needs_review,
+      grade: cell.grade && {
+        submissionId: cell.grade.submission_id,
+        points: cell.grade.points,
+        isOutdated: cell.grade.is_outdated,
+      },
+    })),
+  };
+};
+
+const reviewPath = (
+  courseId: number,
+  assignmentId: number,
+  submissionId: number,
+) => `${assignmentsPath(courseId, assignmentId)}/attempts/${submissionId}`;
+
+const toAttemptReview = (body: ApiAttemptReview): AttemptReview => ({
+  ...toAttemptSummary(body),
+  student: { id: body.student.id, fullName: body.student.full_name },
+  assignment: body.assignment,
+  language: body.language,
+  code: body.code,
+  results: body.results.map((result) => ({
+    testName: result.test_name,
+    visibility: result.visibility,
+    passed: result.passed,
+    errorType: result.error_type,
+    runtimeMs: result.runtime_ms,
+    stdinInput: result.stdin_input,
+    expectedOutput: result.expected_output,
+    actualOutput: result.actual_output,
+    errorOutput: result.error_output,
+  })),
+  feedback: body.feedback && {
+    source: body.feedback.source,
+    summary: body.feedback.summary,
+    items: body.feedback.items.map((item) => ({
+      kind: item.kind,
+      message: item.message,
+      lineStart: item.line_start,
+      criterionTitle: item.criterion_title,
+    })),
+  },
+  isGraded: body.is_graded,
+  criteria: body.criteria.map((criterion) => ({
+    id: criterion.id,
+    title: criterion.title,
+    description: criterion.description,
+    maxPoints: criterion.max_points,
+    isTested: criterion.is_tested,
+    suggestedPoints: criterion.suggested_points,
+    finalPoints: criterion.final_points,
+    overrideReason: criterion.override_reason,
+  })),
+  attempts: body.attempts.map(toAttemptSummary),
+});
+
+export const fetchAttemptReview = async (
+  courseId: number,
+  assignmentId: number,
+  submissionId: number,
+): Promise<AttemptReview> =>
+  toAttemptReview(
+    (await (
+      await sendRequest(reviewPath(courseId, assignmentId, submissionId))
+    ).json()) as ApiAttemptReview,
+  );
+
+export const approveGrade = async (
+  courseId: number,
+  assignmentId: number,
+  submissionId: number,
+  scores: ScoreInput[],
+): Promise<AttemptReview> => {
+  const response = await postJson(
+    `${reviewPath(courseId, assignmentId, submissionId)}/grade`,
+    { scores },
+  );
+  return toAttemptReview((await response.json()) as ApiAttemptReview);
 };

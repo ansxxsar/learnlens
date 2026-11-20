@@ -37,7 +37,10 @@ export function AssignmentDetailsContainer({
   return canManage ? (
     <InstructorDetails {...props} />
   ) : (
-    <StudentDetails courseId={props.courseId} assignmentId={props.assignmentId} />
+    <StudentDetails
+      courseId={props.courseId}
+      assignmentId={props.assignmentId}
+    />
   );
 }
 
@@ -98,7 +101,8 @@ function InstructorDetails({
   const deletion = useSubmitStatus();
   const [criterionTarget, setCriterionTarget] =
     useState<Target<RubricCriterion>>(null);
-  const [testTarget, setTestTarget] = useState<Target<AssignmentTestCase>>(null);
+  const [testTarget, setTestTarget] =
+    useState<Target<AssignmentTestCase>>(null);
   const [busyKey, setBusyKey] = useState<string | null>(null);
 
   if (details.isLoading) return <p className="state-message">Loading...</p>;
@@ -207,10 +211,14 @@ function InstructorDetails({
               `criterion-${criterion.id}`,
               () => openCriterion(criterion),
               () =>
-                void remove(`criterion-${criterion.id}`, criterion.title, async () => {
-                  await deleteCriterion(courseId, assignmentId, criterion.id);
-                  details.removeCriterion(criterion.id);
-                }),
+                void remove(
+                  `criterion-${criterion.id}`,
+                  criterion.title,
+                  async () => {
+                    await deleteCriterion(courseId, assignmentId, criterion.id);
+                    details.removeCriterion(criterion.id);
+                  },
+                ),
             )
           }
         />

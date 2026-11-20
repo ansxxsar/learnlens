@@ -5,6 +5,7 @@ import { GuestOnly, RequireAuth } from "./components/containers/AuthGuards";
 import { AboutPage } from "./pages/AboutPage";
 import { AccountPage } from "./pages/AccountPage";
 import { CoursePage } from "./pages/CoursePage";
+import { GradebookPage } from "./pages/GradebookPage";
 import { HomePage } from "./pages/HomePage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { SignInPage } from "./pages/SignInPage";
@@ -32,6 +33,7 @@ function App() {
         <Route path="/account" element={<AccountPage />} />
         {/* Not "/courses": the dev server sends that path to the API. */}
         <Route path="/course/:courseId" element={<CoursePage />} />
+        <Route path="/course/:courseId/gradebook" element={<GradebookPage />} />
       </Route>
       <Route element={<GuestOnly />}>
         <Route path="/sign-in" element={<SignInPage />} />

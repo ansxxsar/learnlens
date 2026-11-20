@@ -42,7 +42,8 @@ export function useAssignmentDetails<T extends PublicTestCase>(
       loadTests(courseId, assignmentId),
     ])
       .then(([rubric, tests]) => {
-        if (isCurrent) setState({ rubric, tests, isLoading: false, error: null });
+        if (isCurrent)
+          setState({ rubric, tests, isLoading: false, error: null });
       })
       .catch((error: unknown) => {
         if (isCurrent) {
@@ -85,7 +86,10 @@ export function useAssignmentDetails<T extends PublicTestCase>(
   }, []);
 
   const saveTest = useCallback((saved: T) => {
-    setState((current) => ({ ...current, tests: upsert(current.tests, saved) }));
+    setState((current) => ({
+      ...current,
+      tests: upsert(current.tests, saved),
+    }));
   }, []);
 
   const removeTest = useCallback((testId: number) => {

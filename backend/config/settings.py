@@ -48,6 +48,8 @@ INSTALLED_APPS = [
     'submissions',
     'execution',
     'feedback',
+    'grading',
+    'audit',
 ]
 
 # Custom user model (table "users" in the ERD). Must be set before the first migrate.
