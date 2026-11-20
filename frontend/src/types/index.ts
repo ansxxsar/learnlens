@@ -152,6 +152,35 @@ export interface TestResult {
   errorOutput: string | null;
 }
 
+export type FeedbackKind = "strength" | "issue" | "next_step";
+
+export interface ApiFeedback {
+  source: "rules" | "ai";
+  summary: string;
+  created_at: string;
+  items: {
+    kind: FeedbackKind;
+    message: string;
+    error_category: string | null;
+    line_start: number | null;
+    line_end: number | null;
+    criterion_title: string | null;
+  }[];
+}
+
+export interface FeedbackItem {
+  kind: FeedbackKind;
+  message: string;
+  lineStart: number | null;
+  criterionTitle: string | null;
+}
+
+export interface Feedback {
+  source: ApiFeedback["source"];
+  summary: string;
+  items: FeedbackItem[];
+}
+
 export interface ApiSubmission {
   id: number;
   attempt_number: number;
@@ -162,6 +191,7 @@ export interface ApiSubmission {
   passed_count: number;
   test_count: number;
   results: ApiTestResult[];
+  feedback: ApiFeedback | null;
 }
 
 export interface Submission {
@@ -174,6 +204,7 @@ export interface Submission {
   passedCount: number;
   testCount: number;
   results: TestResult[];
+  feedback: Feedback | null;
 }
 
 // GET /progress: daily practice, counted from submissions. Not a grade.

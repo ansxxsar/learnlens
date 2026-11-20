@@ -2,6 +2,7 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from courses.models import TestCase
+from feedback.serializers import FeedbackSerializer
 
 from .languages import LANGUAGE_BY_FILE, LANGUAGE_CHOICES
 from .models import TestResult
@@ -81,6 +82,12 @@ class SubmissionSerializer(serializers.Serializer):
     passed_count = serializers.SerializerMethodField()
     test_count = serializers.SerializerMethodField()
     results = serializers.SerializerMethodField()
+    feedback = serializers.SerializerMethodField()
+
+    def get_feedback(self, submission):
+        # Absent until the tests have run, or when no test ran.
+        feedback = getattr(submission, 'feedback', None)
+        return FeedbackSerializer(feedback).data if feedback else None
 
     def _results(self, submission):
         return sorted(submission.test_results.all(), key=lambda result: result.test_case_id)
