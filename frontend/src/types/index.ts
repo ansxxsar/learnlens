@@ -118,6 +118,40 @@ export interface LanguageOption {
 
 export type ThemePreference = "light" | "system" | "dark";
 
+export type TestErrorType =
+  | "wrong_answer"
+  | "runtime_error"
+  | "time_limit"
+  | "memory_limit"
+  | "output_limit"
+  | "compile_error";
+
+// For hidden tests the server sends null input and outputs (only a compiler
+// message may be present), so students never see hidden data.
+export interface ApiTestResult {
+  test_name: string;
+  is_hidden: boolean;
+  passed: boolean;
+  error_type: TestErrorType | null;
+  runtime_ms: number | null;
+  stdin_input: string | null;
+  expected_output: string | null;
+  actual_output: string | null;
+  error_output: string | null;
+}
+
+export interface TestResult {
+  testName: string;
+  isHidden: boolean;
+  passed: boolean;
+  errorType: TestErrorType | null;
+  runtimeMs: number | null;
+  stdinInput: string | null;
+  expectedOutput: string | null;
+  actualOutput: string | null;
+  errorOutput: string | null;
+}
+
 export interface ApiSubmission {
   id: number;
   attempt_number: number;
@@ -125,6 +159,9 @@ export interface ApiSubmission {
   submitted_at: string;
   language: ProgrammingLanguage | null;
   code: string;
+  passed_count: number;
+  test_count: number;
+  results: ApiTestResult[];
 }
 
 export interface Submission {
@@ -134,6 +171,9 @@ export interface Submission {
   submittedAt: string;
   language: ProgrammingLanguage | null;
   code: string;
+  passedCount: number;
+  testCount: number;
+  results: TestResult[];
 }
 
 // GET /progress: daily practice, counted from submissions. Not a grade.
