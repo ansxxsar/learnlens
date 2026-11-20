@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'accounts',
     'courses',
     'submissions',
+    'execution',
 ]
 
 # Custom user model (table "users" in the ERD). Must be set before the first migrate.
@@ -169,3 +170,18 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# Background jobs (execution/tasks.py). Redis is the broker; results are not
+# stored, because workers write their results to the database.
+CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://127.0.0.1:6379/0')
+CELERY_TASK_IGNORE_RESULT = True
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_ACCEPT_CONTENT = ['json']
+# One job at a time per worker process, so a long run does not hold others.
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+# A broker outage must not hang the student's request: fail fast, keep the
+# attempt queued and log it (see execution.tasks.enqueue_submission).
+CELERY_TASK_PUBLISH_RETRY = False
+CELERY_BROKER_CONNECTION_TIMEOUT = 2
+CELERY_BROKER_TRANSPORT_OPTIONS = {'socket_connect_timeout': 2, 'socket_timeout': 5}

@@ -423,6 +423,19 @@ const toSubmission = (submission: ApiSubmission): Submission => ({
   submittedAt: submission.submitted_at,
   language: submission.language,
   code: submission.code,
+  passedCount: submission.passed_count,
+  testCount: submission.test_count,
+  results: submission.results.map((result) => ({
+    testName: result.test_name,
+    isHidden: result.is_hidden,
+    passed: result.passed,
+    errorType: result.error_type,
+    runtimeMs: result.runtime_ms,
+    stdinInput: result.stdin_input,
+    expectedOutput: result.expected_output,
+    actualOutput: result.actual_output,
+    errorOutput: result.error_output,
+  })),
 });
 
 export const fetchMyAttempts = async (
@@ -435,7 +448,8 @@ export const fetchMyAttempts = async (
   return ((await response.json()) as ApiSubmission[]).map(toSubmission);
 };
 
-// Only stores the attempt. The code is never run in the browser or the API.
+// Stores the attempt and queues it. The code is never run in the browser or
+// the API, only in isolated containers by the execution worker.
 export const submitAttempt = async (
   courseId: number,
   assignmentId: number,

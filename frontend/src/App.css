@@ -2194,3 +2194,48 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Test results of an attempt. */
+.attempt-results {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+}
+
+.attempt-results h4 {
+  margin: 0;
+  font-family: "Manrope", sans-serif;
+  font-size: 16px;
+}
+
+.test-result--passed {
+  color: var(--color-status-done-text);
+  background: var(--color-status-done-bg);
+}
+
+.test-result--failed {
+  color: var(--color-error-text);
+  background: var(--color-error-bg);
+}
+
+/* Error labels are sentences, not status names. */
+.status.test-result--passed,
+.status.test-result--failed {
+  text-transform: none;
+}
+
+.test-result__error {
+  margin-top: 10px;
+}
+
+.test-io__pair--three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 640px) {
+  .test-io__pair--three {
+    grid-template-columns: 1fr;
+  }
+}

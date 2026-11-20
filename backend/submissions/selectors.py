@@ -21,7 +21,7 @@ WEEK_DAYS = 7
 def get_my_attempts(assignment, student):
     return (
         Submission.objects.filter(assignment=assignment, student=student)
-        .prefetch_related('files')
+        .prefetch_related('files', 'test_results__test_case')
         .order_by('-attempt_number')
     )
 
