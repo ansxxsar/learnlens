@@ -1,7 +1,11 @@
 from django.utils import timezone
 from rest_framework import serializers
 
+from courses.models import TestCase
+from feedback.serializers import FeedbackSerializer
+
 from .languages import LANGUAGE_BY_FILE, LANGUAGE_CHOICES
+from .models import TestResult
 
 # Generous for beginner exercises, small enough that one request cannot fill
 # the database.
@@ -19,8 +23,54 @@ class SubmissionCreateSerializer(serializers.Serializer):
         return value
 
 
+class StudentTestResultSerializer(serializers.Serializer):
+    """One test result as the student sees it.
+
+    Security: a hidden test's output may echo its input, so for hidden tests
+    only the verdict is sent. The one exception is a compiler message, which
+    comes from the student's code alone and is the same for every test.
+    """
+
+    test_name = serializers.SerializerMethodField()
+    is_hidden = serializers.SerializerMethodField()
+    passed = serializers.BooleanField()
+    error_type = serializers.CharField(allow_null=True)
+    runtime_ms = serializers.IntegerField(allow_null=True)
+    stdin_input = serializers.SerializerMethodField()
+    expected_output = serializers.SerializerMethodField()
+    actual_output = serializers.SerializerMethodField()
+    error_output = serializers.SerializerMethodField()
+
+    def _hidden(self, result):
+        return result.test_case.visibility == TestCase.Visibility.HIDDEN
+
+    def get_is_hidden(self, result):
+        return self._hidden(result)
+
+    def get_test_name(self, result):
+        # Hidden test names can describe the secret input, so they get a number.
+        if self._hidden(result):
+            return f'Hidden test {self.context["hidden_numbers"][result.id]}'
+        return result.test_case.name
+
+    def get_stdin_input(self, result):
+        return None if self._hidden(result) else result.test_case.stdin_input
+
+    def get_expected_output(self, result):
+        return None if self._hidden(result) else result.test_case.expected_output
+
+    def get_actual_output(self, result):
+        return None if self._hidden(result) else result.actual_output
+
+    def get_error_output(self, result):
+        if self._hidden(result) and result.error_type != TestResult.ErrorType.COMPILE_ERROR:
+            return None
+        return result.error_output
+
+
 class SubmissionSerializer(serializers.Serializer):
-    """One of the student's own attempts, including their own code."""
+    """One of the student's own attempts, including their own code and its
+    test results."""
 
     id = serializers.IntegerField()
     attempt_number = serializers.IntegerField()
@@ -28,6 +78,53 @@ class SubmissionSerializer(serializers.Serializer):
     submitted_at = serializers.DateTimeField()
     language = serializers.SerializerMethodField()
     code = serializers.SerializerMethodField()
+
+    passed_count = serializers.SerializerMethodField()
+    test_count = serializers.SerializerMethodField()
+    results = serializers.SerializerMethodField()
+    feedback = serializers.SerializerMethodField()
+    grade = serializers.SerializerMethodField()
+
+    def get_grade(self, submission):
+        # Scores exist only after the instructor approved them, so an
+        # unapproved suggestion never reaches the student.
+        scores = sorted(
+            submission.criterion_scores.all(), key=lambda score: (score.criterion.position, score.criterion_id)
+        )
+        if not scores:
+            return None
+        return {
+            'points': float(sum(score.final_points for score in scores)),
+            'max_points': float(sum(score.criterion.max_points for score in scores)),
+            'criteria': [
+                {
+                    'title': score.criterion.title,
+                    'points': float(score.final_points),
+                    'max_points': float(score.criterion.max_points),
+                }
+                for score in scores
+            ],
+        }
+
+    def get_feedback(self, submission):
+        # Absent until the tests have run, or when no test ran.
+        feedback = getattr(submission, 'feedback', None)
+        return FeedbackSerializer(feedback).data if feedback else None
+
+    def _results(self, submission):
+        return sorted(submission.test_results.all(), key=lambda result: result.test_case_id)
+
+    def get_passed_count(self, submission):
+        return sum(result.passed for result in submission.test_results.all())
+
+    def get_test_count(self, submission):
+        return len(submission.test_results.all())
+
+    def get_results(self, submission):
+        results = self._results(submission)
+        hidden = [result for result in results if result.test_case.visibility == TestCase.Visibility.HIDDEN]
+        numbers = {result.id: index for index, result in enumerate(hidden, start=1)}
+        return StudentTestResultSerializer(results, many=True, context={'hidden_numbers': numbers}).data
 
     def _entry(self, submission):
         return next((file for file in submission.files.all() if file.is_entry_point), None)

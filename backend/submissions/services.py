@@ -1,8 +1,8 @@
 """Rules for storing a student's attempt.
 
 Security: the code is saved as text and nothing here runs it. Running
-submissions is the job of isolated execution workers (not built yet), which
-will pick up attempts in the "queued" status.
+submissions is the job of the isolated execution workers (execution/), which
+pick up attempts in the "queued" status.
 """
 
 from django.db import IntegrityError, transaction
@@ -10,6 +10,7 @@ from django.db.models import Max
 from rest_framework.exceptions import APIException
 
 from courses.models import Assignment
+from execution.tasks import enqueue_submission
 
 from .languages import ENTRY_FILES
 from .models import Submission, SubmissionFile
@@ -47,4 +48,6 @@ def create_submission(assignment, student, language, code):
         # Two requests counted the same attempt number; the unique key let
         # only one through.
         raise SubmissionConflict()
+    # Only after the attempt is saved, so the worker can always find it.
+    transaction.on_commit(lambda: enqueue_submission(submission.id))
     return submission

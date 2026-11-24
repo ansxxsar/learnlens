@@ -18,6 +18,10 @@ interface CourseAssignmentItemProps {
   onStartSubmission?: () => void;
   // The submission form, shown under the instructions while open.
   children?: ReactNode;
+  // The rubric and tests panel, and whether it is open.
+  details?: ReactNode;
+  isDetailsOpen: boolean;
+  onToggleDetails: () => void;
 }
 
 const attemptsLabel = (count: number): string =>
@@ -32,11 +36,29 @@ export function CourseAssignmentItem({
   isSubmitting = false,
   onStartSubmission,
   children,
+  details,
+  isDetailsOpen,
+  onToggleDetails,
 }: CourseAssignmentItemProps) {
   const attemptCount = assignment.attemptCount ?? 0;
   const canSubmit = !canManage && assignment.status === "published";
   // Students only see published and closed work, so only "Closed" needs a badge.
   const showStatus = canManage || assignment.status === "closed";
+
+  const detailsButton = (
+    <button
+      className="secondary-button"
+      type="button"
+      aria-expanded={isDetailsOpen}
+      onClick={onToggleDetails}
+    >
+      {isDetailsOpen
+        ? "Hide rubric"
+        : canManage
+          ? "Rubric & tests"
+          : "Rubric & examples"}
+    </button>
+  );
 
   return (
     <article className="course-assignment">
@@ -63,22 +85,32 @@ export function CourseAssignmentItem({
         {assignment.instructions}
       </p>
 
+      {details}
+
       {children}
 
-      {canSubmit && !isSubmitting && (
+      {!canManage && (
         <div className="course-assignment__actions">
-          <button
-            className="primary-button"
-            type="button"
-            onClick={onStartSubmission}
-          >
-            {attemptCount > 0 ? "Submit again" : "Submit solution"}
-          </button>
+          {canSubmit && !isSubmitting && (
+            <button
+              className="primary-button"
+              type="button"
+              onClick={onStartSubmission}
+            >
+              {attemptCount > 0 ? "Submit again" : "Submit solution"}
+            </button>
+          )}
+          {detailsButton}
         </div>
+      )}
+
+      {canManage && assignment.status === "archived" && (
+        <div className="course-assignment__actions">{detailsButton}</div>
       )}
 
       {canManage && assignment.status !== "archived" && (
         <div className="course-assignment__actions">
+          {detailsButton}
           <button
             className="secondary-button"
             type="button"

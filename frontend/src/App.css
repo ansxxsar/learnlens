@@ -2032,3 +2032,515 @@
     justify-content: flex-start;
   }
 }
+
+/* Rubric and tests panel inside an assignment card. */
+.assignment-details {
+  display: grid;
+  gap: 20px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+}
+
+.assignment-details section {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.assignment-details h4,
+.detail-form h4 {
+  margin: 0;
+  font-family: "Manrope", sans-serif;
+  font-size: 16px;
+}
+
+.assignment-details__heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.assignment-details__heading .secondary-button {
+  margin-top: 0;
+  padding: 8px 14px;
+  font-size: 14px;
+}
+
+.detail-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.detail-list__item {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+
+.detail-list__item .course-assignment__actions {
+  margin-top: 10px;
+}
+
+.detail-list__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  overflow-wrap: anywhere;
+}
+
+.detail-list__points {
+  color: var(--color-accent-text);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.detail-list__text {
+  margin: 6px 0 0;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.detail-list__total {
+  margin: 0;
+  font-weight: 700;
+  text-align: right;
+}
+
+.detail-list__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-text-subtle);
+  font-size: 13px;
+}
+
+.test-visibility--public {
+  color: var(--color-status-done-text);
+  background: var(--color-status-done-bg);
+}
+
+.test-visibility--hidden {
+  color: var(--color-status-idle-text);
+  background: var(--color-status-idle-bg);
+}
+
+.test-io__pair,
+.detail-form__pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.detail-form__pair {
+  margin-top: 0;
+}
+
+.test-io {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.test-io__label {
+  color: var(--color-text-subtle);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.test-io__value {
+  margin: 0;
+  padding: 10px;
+  max-height: 180px;
+  overflow: auto;
+  color: var(--color-editor-text);
+  background: var(--color-editor-bg);
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.test-io__empty {
+  color: var(--color-text-disabled);
+  font-size: 13px;
+  font-style: italic;
+}
+
+.detail-form {
+  padding: 16px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+
+.detail-form .primary-button,
+.detail-form .secondary-button {
+  margin-top: 0;
+}
+
+@media (max-width: 640px) {
+  .test-io__pair,
+  .detail-form__pair {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Test results of an attempt. */
+.attempt-results {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+}
+
+.attempt-results h4 {
+  margin: 0;
+  font-family: "Manrope", sans-serif;
+  font-size: 16px;
+}
+
+.test-result--passed {
+  color: var(--color-status-done-text);
+  background: var(--color-status-done-bg);
+}
+
+.test-result--failed {
+  color: var(--color-error-text);
+  background: var(--color-error-bg);
+}
+
+/* Error labels are sentences, not status names. */
+.status.test-result--passed,
+.status.test-result--failed {
+  text-transform: none;
+}
+
+.test-result__error {
+  margin-top: 10px;
+}
+
+.test-io__pair--three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 640px) {
+  .test-io__pair--three {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Feedback on an attempt: what works, what to fix, the next step. */
+.feedback-panel {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+
+.feedback-panel__summary {
+  margin: 0;
+  font-weight: 700;
+}
+
+.feedback-panel__group h5 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.feedback-panel__group ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 18px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.feedback-panel__group--strength h5 {
+  color: var(--color-status-done-text);
+}
+
+.feedback-panel__group--issue h5 {
+  color: var(--color-error-text);
+}
+
+.feedback-panel__group--next_step h5 {
+  color: var(--color-accent-text);
+}
+
+.feedback-panel__refs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+.feedback-panel__refs span {
+  padding: 2px 8px;
+  color: var(--color-text-subtle);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+/* Teacher gradebook: a sheet of students × assignments. */
+.course-page__heading-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.course-page__heading-actions .secondary-button,
+.course-page__heading-actions .primary-button {
+  margin-top: 0;
+  text-decoration: none;
+}
+
+.gradebook-page {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+/* The sheet scrolls sideways inside its box; the page itself never does. */
+.gradebook__scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+}
+
+.gradebook__scroll:focus-visible {
+  outline: 3px solid var(--color-accent);
+}
+
+.gradebook {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.gradebook th,
+.gradebook td {
+  padding: 8px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.gradebook thead th {
+  min-width: 140px;
+  font-weight: 700;
+}
+
+.gradebook tbody th {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  min-width: 150px;
+  background: var(--color-surface);
+  font-weight: 600;
+}
+
+.gradebook__max {
+  display: block;
+  color: var(--color-text-subtle);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.gradebook__cell {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  padding: 8px 10px;
+  color: var(--color-text);
+  text-align: left;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.gradebook__cell:hover {
+  border-color: var(--color-border-hover);
+}
+
+.gradebook__cell:focus-visible {
+  outline: 3px solid var(--color-accent);
+}
+
+.gradebook__cell--selected {
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-selected);
+}
+
+.gradebook__points {
+  font-weight: 700;
+}
+
+.gradebook__state {
+  color: var(--color-text-subtle);
+  font-size: 12px;
+}
+
+.gradebook__cell--graded {
+  background: var(--color-status-done-bg);
+}
+
+.gradebook__cell--graded .gradebook__state {
+  color: var(--color-status-done-text);
+}
+
+.gradebook__cell--review .gradebook__state,
+.gradebook__cell--outdated .gradebook__state {
+  color: var(--color-status-active-text);
+}
+
+.gradebook__empty {
+  color: var(--color-text-disabled);
+  font-size: 13px;
+}
+
+.review-panel {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.review-panel h3 {
+  margin: 4px 0 0;
+}
+
+.review-panel__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.review-panel__attempts {
+  width: auto;
+  padding: 6px 10px;
+}
+
+.review-panel__code {
+  max-height: 360px;
+}
+
+.grade-form {
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+
+.grade-form h4 {
+  margin: 0;
+}
+
+.grade-form__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px 12px;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.grade-form__criterion {
+  display: grid;
+  gap: 2px;
+}
+
+.grade-form__points {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.grade-form__points input {
+  width: 90px;
+  padding: 8px 10px;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 8px;
+  font: inherit;
+}
+
+.grade-form__points input[aria-invalid="true"],
+.grade-form__reason:invalid {
+  border-color: var(--color-error-text);
+}
+
+.grade-form__reason {
+  grid-column: 1 / -1;
+  padding: 8px 10px;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 8px;
+  font: inherit;
+}
+
+.grade-form__row .auth-form__field-error {
+  grid-column: 1 / -1;
+}
+
+.grade-form__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.grade-form__footer .primary-button {
+  margin-top: 0;
+}
+
+/* A student's approved grade on their attempt. */
+.student-grade {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  background: var(--color-status-done-bg);
+  border-radius: 12px;
+}
+
+.student-grade strong {
+  color: var(--color-status-done-text);
+  font-size: 18px;
+}
+
+.student-grade ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}
+
+@media (max-width: 640px) {
+  .grade-form__row {
+    grid-template-columns: 1fr;
+  }
+}

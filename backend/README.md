@@ -7,6 +7,11 @@ Apps:
 - `accounts` – custom `User` model (table `users`) and the `/auth` API
 - `courses` – Phase 2 course setup: `courses`, `course_sections`, `enrollments`,
   `skills`, `assignments`, `rubric_criteria`, `test_cases`
+- `submissions` – attempts and their results: `submissions`, `submission_files`, `test_results`
+- `execution` – the Celery worker that runs attempts in isolated Docker containers (no tables)
+- `feedback` – feedback on each attempt: `feedback`, `feedback_items`
+- `grading` – the instructor gradebook and approved scores: `criterion_scores`
+- `audit` – an append-only log of assessment changes: `audit_logs`
 
 Table and column names follow [docs/erd/learnlens-erd.drawio](../docs/erd/learnlens-erd.drawio).
 
@@ -27,7 +32,19 @@ pip install -r requirements.txt
 
 # Settings: copy the template, then set DJANGO_SECRET_KEY and POSTGRES_PASSWORD
 cp .env.example .env
+
+# Code execution: Redis (job queue) and Docker (isolated runners)
+brew install redis colima docker
+brew services start redis
+colima start --cpu 2 --memory 4
+docker pull python:3.12-alpine
+docker pull node:22-alpine
+docker pull eclipse-temurin:21-jdk-alpine
+docker build -t learnlens-runner-cpp:1 -f execution/images/cpp.Dockerfile execution/images
 ```
+
+If `docker pull` fails with `docker-credential-desktop: executable file not found`, remove the
+`"credsStore": "desktop"` line from `~/.docker/config.json` (left over from Docker Desktop).
 
 ## Common commands
 
@@ -36,7 +53,12 @@ python manage.py migrate           # create / update tables
 python manage.py test              # run tests (needs the CREATEDB permission)
 python manage.py createsuperuser   # admin login (email + password)
 python manage.py runserver         # admin at http://127.0.0.1:8000/admin/
+celery -A config worker -l info --concurrency 2   # runs submitted code (second terminal)
+python manage.py requeue_submissions [--failed]   # resend attempts after Redis or Docker was down
 ```
+
+Without a running worker, attempts stay `queued`. The runner security tests in `execution/tests.py` are
+skipped when Docker or the runner images are missing.
 
 ## Authentication API
 
@@ -113,14 +135,45 @@ Assignment rules (in `courses/services.py`):
 - Assignments belong to the whole course, so every instructor of the course can manage them.
 - Responses never include test cases, so hidden tests cannot leak through these endpoints.
 
-## Submissions and daily progress API
+### Rubric and tests
 
-Students submit code to published assignments of their own courses. **The code is only stored.** Nothing in
-the API runs it; attempts wait in the `queued` status for the isolated execution workers (not built yet).
+Each assignment has a rubric (scored criteria) and test cases (an input and the exact output expected). The
+tests are what the execution workers will run once they exist.
 
 | Endpoint | Purpose | Success |
 |---|---|---|
-| `GET /courses/{id}/assignments/{aid}/submissions` | Students: their own attempts, newest first, with their code | 200 |
+| `GET /courses/{id}/assignments/{aid}/rubric` | Members: the criteria in `position` order | 200 |
+| `POST /courses/{id}/assignments/{aid}/rubric` | Instructors: body `{"title", "description", "max_points", "position"}` | 201 |
+| `PATCH /courses/{id}/assignments/{aid}/rubric/{cid}` | Instructors: any of the fields above | 200 |
+| `DELETE /courses/{id}/assignments/{aid}/rubric/{cid}` | Instructors: removes the criterion | 204 |
+| `GET /courses/{id}/assignments/{aid}/tests` | Instructors: every test. Students: public tests only | 200 |
+| `POST /courses/{id}/assignments/{aid}/tests` | Instructors: body `{"name", "visibility", "stdin_input", "expected_output", "weight", "time_limit_ms", "criterion"}` | 201 |
+| `PATCH /courses/{id}/assignments/{aid}/tests/{tid}` | Instructors: any of the fields above | 200 |
+| `DELETE /courses/{id}/assignments/{aid}/tests/{tid}` | Instructors: removes the test | 204 |
+
+- **Hidden tests never reach students.** The query itself filters them out, and students get only `id`,
+  `name`, `stdin_input` and `expected_output` of public tests.
+- New tests are `hidden` unless `"visibility": "public"` is sent.
+- Students can read the rubric and public tests of `published` and `closed` assignments only; others answer
+  404. Instructors can prepare them on drafts.
+- `max_points` and `weight` are between 0.01 and 1000. `time_limit_ms` is between 100 and 10,000, so one test
+  cannot hold a worker for long. Input and expected output are at most 20,000 characters each, and their
+  whitespace is kept exactly.
+- `criterion` links a test to a criterion of the same assignment, or is `null`. Deleting a criterion keeps
+  its tests and only unlinks them.
+- New criteria go to the end of the rubric unless `position` is sent.
+- The rubric and tests of an archived assignment cannot be changed. Tests can still be edited after
+  publishing; earlier attempts are not re-checked automatically.
+- Skills cannot be linked to criteria through the API yet (admin only).
+
+## Submissions and daily progress API
+
+Students submit code to published assignments of their own courses. **The API never runs it.** It saves
+the attempt as `queued` and hands it to the execution worker (see [Code execution](#code-execution)).
+
+| Endpoint | Purpose | Success |
+|---|---|---|
+| `GET /courses/{id}/assignments/{aid}/submissions` | Students: their own attempts, newest first, with their code and test results | 200 |
 | `POST /courses/{id}/assignments/{aid}/submissions` | Students: body `{"language", "code"}`. Saves a new attempt | 201 |
 | `GET /progress` | The signed-in user's daily practice and open tasks | 200 |
 
@@ -140,3 +193,106 @@ each with `is_done` and `is_overdue`), `completed_tasks` and `total_tasks`.
 - Days start at midnight in `TIME_ZONE` (`Asia/Almaty`), not UTC.
 - The streak counts days in a row with at least one submission. It stays alive until the end of today, so
   it counts back from yesterday when today has no submission yet.
+
+## Code execution
+
+A Celery worker (`execution/`) takes each queued attempt, runs it against every test case of its
+assignment, stores one `test_results` row per test and sets the attempt to `completed`. If Docker itself
+fails, the attempt becomes `failed` and can be retried with `manage.py requeue_submissions --failed`.
+
+| Language | Image | Steps |
+|---|---|---|
+| Python | `python:3.12-alpine` | `python3 -I main.py` |
+| JavaScript | `node:22-alpine` | `node main.js` |
+| Java | `eclipse-temurin:21-jdk-alpine` | `javac Main.java`, then `java Main` (class must be `Main`) |
+| C++ | `learnlens-runner-cpp:1` (built from `execution/images/`) | `g++ -std=c++17 -O2`, then `./main` |
+
+HTML and CSS attempts are not run yet; they complete with no results.
+
+**Isolation (execution/runner.py).** Submitted code is hostile. Every test runs in a new container with no
+network, a read-only root filesystem (64 MB tmpfs for `/work` and `/tmp`), 256 MB of memory (512 MB for
+Java) and no swap, one CPU, 64 processes (128 for Java), 16 MB per file, 64 open files, no capabilities,
+`no-new-privileges`, user 65534 and no logs. Nothing from the host is mounted and the worker's environment
+variables are not passed in. The container is removed when it stops. The host enforces the limits that the
+code could otherwise tamper with: the test's time limit (after a separate 20-second compile budget) and
+64 KiB per output stream.
+
+The worker needs the Docker daemon, so it must run as its own process; the API never runs code. In
+production the daemon must not be reachable from the API, and the runner needs more defence in depth, such
+as gVisor or a separate VM per worker (development.md).
+
+**Verdicts.** A test passes when the program exits with 0 and its output matches the expected output, line
+by line, ignoring spaces at line ends and blank lines at the end. Otherwise `error_type` is one of
+`compile_error`, `time_limit`, `output_limit`, `memory_limit` (killed by the out-of-memory killer),
+`runtime_error` (non-zero exit) or `wrong_answer`. `runtime_ms` is wall time measured by the host, so it
+includes a little start-up time.
+
+**What students see.** In `results`, public tests include the input, expected output, the program's output
+and its stderr. Hidden tests are named "Hidden test 1, 2, ..." and include only `passed`, `error_type` and
+`runtime_ms`, because a program can print its secret input. The only exception is a compiler message,
+which depends on the code alone. Each attempt also has `passed_count` and `test_count`.
+
+After the tests run, the worker also stores [feedback](#feedback) for the attempt.
+
+Known limits: Java and C++ are compiled again for each test; changing tests does not re-run old attempts;
+instructors cannot see their students' results in the app yet.
+
+## Feedback
+
+Once an attempt's tests have run, `feedback/rules.py` turns the results into feedback: a summary plus
+items of kind `strength`, `issue` and `next_step` (always exactly one, last). It is stored with
+`source = "rules"` and `evidence_version = "rules-v1"`, and appears as `feedback` on each attempt in
+`GET .../submissions` (`null` until the tests have run, or when no test ran).
+
+The rules are deterministic, so every message can be traced to its evidence. They:
+
+- read the line and message of compiler errors (C++, Java) and exceptions (Python, JavaScript, Java), and
+  explain common exceptions in plain words;
+- report a compile error, or the same crash in several tests, once;
+- name common output mistakes in public tests: nothing printed, letter case, spacing, extra prompt text,
+  number format, line count, or the first differing line;
+- point to edge cases when the examples pass but hidden tests fail;
+- count progress since the previous attempt, criteria whose tests all pass, and remind the student of
+  criteria that no test checks.
+
+The assignment's `feedback_depth` controls how much is said: `hint` gives the summary and the next step
+only, `guided` adds strengths and issues, and `detailed` also quotes expected and actual values and the
+exception messages of public tests.
+
+**Hidden tests.** Their output and stderr can contain the secret input, so for hidden tests the rules use
+only the verdict, the exception type and the line in the student's own code. They are named "Hidden test
+N" in every message.
+
+Feedback never changes test results or grades. If building it fails, the error is logged and the attempt
+keeps its results. Items link to their rubric criterion, test result and, for line numbers, the entry
+file. Feedback with `source = "ai"` must record `model_name` and `prompt_version` (database constraint);
+AI feedback is not built yet.
+
+## Gradebook and grades
+
+Instructors grade from a sheet of their students × the course's published and closed assignments. Only the
+student's **latest** attempt is suggested for grading, and nothing reaches the student until an instructor
+approves it (AGENTS.md: a suggestion is never the final grade).
+
+| Endpoint | Purpose | Success |
+|---|---|---|
+| `GET /courses/{id}/gradebook` | Instructors: `assignments`, `students` and one `cell` per student with attempts | 200 |
+| `GET /courses/{id}/assignments/{aid}/attempts/{sid}` | Instructors: one attempt with code, every test result (hidden ones too), feedback, suggestions and scores | 200 |
+| `POST /courses/{id}/assignments/{aid}/attempts/{sid}/grade` | Instructors: body `{"scores": [{"criterion", "points", "reason"}]}`. Approves the grade | 200 |
+
+- **Suggested points** (`grading/scoring.py`): a criterion earns its `max_points` in proportion to the weight
+  of its passed tests. A criterion with no tests has no suggestion and the instructor must enter it (later,
+  AI feedback may suggest it). Tests linked to no criterion do not count toward points.
+- A cell has the latest attempt, `suggested_points` (the sum over tested criteria), `needs_review` (some
+  criterion waits for the instructor) and `grade` (the latest approved attempt, with `is_outdated` when a
+  newer attempt arrived).
+- **Approving**: a criterion sent without `points` takes its suggestion. Points must be between 0 and the
+  criterion's maximum. Points that differ from a suggestion need a `reason`, which is stored with the
+  instructor and time (`overridden_by`, `override_reason`, `overridden_at`). Errors come back per criterion
+  as `{"score_<criterion id>": ["..."]}`. Attempts still queued or running cannot be graded. Approving again
+  replaces the scores.
+- `criterion_scores` rows exist only for approved grades, so students never see a suggestion. Students get
+  `grade` (`points`, `max_points`, `criteria`) on their graded attempt in `GET .../submissions`.
+- Section instructors see and grade only their own section; anyone else's attempt answers 404.
+- Every approval adds an `audit_logs` row (`grade.approved`) with the actor and the auto and final points per
+  criterion, never code or the reason text. Audit rows are read-only in the admin site.

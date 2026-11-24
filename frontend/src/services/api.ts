@@ -1,5 +1,20 @@
 import type {
+  ApiAttemptReview,
+  ApiAttemptSummary,
+  ApiGradebook,
+  AttemptReview,
+  AttemptSummary,
+  Gradebook,
+  ScoreInput,
   ApiAssignment,
+  ApiPublicTestCase,
+  ApiRubricCriterion,
+  ApiTestCase,
+  AssignmentTestCase,
+  PublicTestCase,
+  RubricCriterion,
+  RubricCriterionInput,
+  TestCaseInput,
   ApiDailyProgress,
   ApiSubmission,
   ApiCourse,
@@ -224,6 +239,164 @@ export const deleteAssignment = async (
   });
 };
 
+// Rubric criteria and test cases. Only instructors may change them; the API
+// gives students the rubric and the public tests only.
+
+const toRubricCriterion = (criterion: ApiRubricCriterion): RubricCriterion => ({
+  id: criterion.id,
+  title: criterion.title,
+  description: criterion.description,
+  maxPoints: criterion.max_points,
+  position: criterion.position,
+});
+
+const toCriterionBody = (input: Partial<RubricCriterionInput>) => ({
+  title: input.title,
+  description: input.description,
+  max_points: input.maxPoints,
+});
+
+const rubricPath = (
+  courseId: number,
+  assignmentId: number,
+  criterionId?: number,
+): string =>
+  `${assignmentsPath(courseId, assignmentId)}/rubric` +
+  (criterionId === undefined ? "" : `/${criterionId}`);
+
+export const fetchRubric = async (
+  courseId: number,
+  assignmentId: number,
+): Promise<RubricCriterion[]> => {
+  const response = await sendRequest(rubricPath(courseId, assignmentId));
+  return ((await response.json()) as ApiRubricCriterion[]).map(
+    toRubricCriterion,
+  );
+};
+
+export const createCriterion = async (
+  courseId: number,
+  assignmentId: number,
+  input: RubricCriterionInput,
+): Promise<RubricCriterion> => {
+  const response = await postJson(
+    rubricPath(courseId, assignmentId),
+    toCriterionBody(input),
+  );
+  return toRubricCriterion((await response.json()) as ApiRubricCriterion);
+};
+
+export const updateCriterion = async (
+  courseId: number,
+  assignmentId: number,
+  criterionId: number,
+  input: RubricCriterionInput,
+): Promise<RubricCriterion> => {
+  const response = await sendJson(
+    rubricPath(courseId, assignmentId, criterionId),
+    "PATCH",
+    toCriterionBody(input),
+  );
+  return toRubricCriterion((await response.json()) as ApiRubricCriterion);
+};
+
+export const deleteCriterion = async (
+  courseId: number,
+  assignmentId: number,
+  criterionId: number,
+): Promise<void> => {
+  await sendWithCsrf(rubricPath(courseId, assignmentId, criterionId), {
+    method: "DELETE",
+  });
+};
+
+const toPublicTestCase = (test: ApiPublicTestCase): PublicTestCase => ({
+  id: test.id,
+  name: test.name,
+  stdinInput: test.stdin_input,
+  expectedOutput: test.expected_output,
+});
+
+const toTestCase = (test: ApiTestCase): AssignmentTestCase => ({
+  ...toPublicTestCase(test),
+  visibility: test.visibility,
+  weight: test.weight,
+  timeLimitMs: test.time_limit_ms,
+  criterionId: test.criterion,
+});
+
+const toTestCaseBody = (input: TestCaseInput) => ({
+  name: input.name,
+  visibility: input.visibility,
+  stdin_input: input.stdinInput,
+  expected_output: input.expectedOutput,
+  weight: input.weight,
+  time_limit_ms: input.timeLimitMs,
+  criterion: input.criterionId,
+});
+
+const testsPath = (
+  courseId: number,
+  assignmentId: number,
+  testId?: number,
+): string =>
+  `${assignmentsPath(courseId, assignmentId)}/tests` +
+  (testId === undefined ? "" : `/${testId}`);
+
+// Instructors: every test of the assignment, hidden ones included.
+export const fetchTestCases = async (
+  courseId: number,
+  assignmentId: number,
+): Promise<AssignmentTestCase[]> => {
+  const response = await sendRequest(testsPath(courseId, assignmentId));
+  return ((await response.json()) as ApiTestCase[]).map(toTestCase);
+};
+
+// Students: the server already left out hidden tests.
+export const fetchPublicTestCases = async (
+  courseId: number,
+  assignmentId: number,
+): Promise<PublicTestCase[]> => {
+  const response = await sendRequest(testsPath(courseId, assignmentId));
+  return ((await response.json()) as ApiPublicTestCase[]).map(toPublicTestCase);
+};
+
+export const createTestCase = async (
+  courseId: number,
+  assignmentId: number,
+  input: TestCaseInput,
+): Promise<AssignmentTestCase> => {
+  const response = await postJson(
+    testsPath(courseId, assignmentId),
+    toTestCaseBody(input),
+  );
+  return toTestCase((await response.json()) as ApiTestCase);
+};
+
+export const updateTestCase = async (
+  courseId: number,
+  assignmentId: number,
+  testId: number,
+  input: TestCaseInput,
+): Promise<AssignmentTestCase> => {
+  const response = await sendJson(
+    testsPath(courseId, assignmentId, testId),
+    "PATCH",
+    toTestCaseBody(input),
+  );
+  return toTestCase((await response.json()) as ApiTestCase);
+};
+
+export const deleteTestCase = async (
+  courseId: number,
+  assignmentId: number,
+  testId: number,
+): Promise<void> => {
+  await sendWithCsrf(testsPath(courseId, assignmentId, testId), {
+    method: "DELETE",
+  });
+};
+
 export const fetchProgress = async (): Promise<DailyProgress> => {
   const response = await sendRequest("/progress");
   const progress = (await response.json()) as ApiDailyProgress;
@@ -253,6 +426,38 @@ const toSubmission = (submission: ApiSubmission): Submission => ({
   submittedAt: submission.submitted_at,
   language: submission.language,
   code: submission.code,
+  passedCount: submission.passed_count,
+  testCount: submission.test_count,
+  results: submission.results.map((result) => ({
+    testName: result.test_name,
+    isHidden: result.is_hidden,
+    passed: result.passed,
+    errorType: result.error_type,
+    runtimeMs: result.runtime_ms,
+    stdinInput: result.stdin_input,
+    expectedOutput: result.expected_output,
+    actualOutput: result.actual_output,
+    errorOutput: result.error_output,
+  })),
+  feedback: submission.feedback && {
+    source: submission.feedback.source,
+    summary: submission.feedback.summary,
+    items: submission.feedback.items.map((item) => ({
+      kind: item.kind,
+      message: item.message,
+      lineStart: item.line_start,
+      criterionTitle: item.criterion_title,
+    })),
+  },
+  grade: submission.grade && {
+    points: submission.grade.points,
+    maxPoints: submission.grade.max_points,
+    criteria: submission.grade.criteria.map((criterion) => ({
+      title: criterion.title,
+      points: criterion.points,
+      maxPoints: criterion.max_points,
+    })),
+  },
 });
 
 export const fetchMyAttempts = async (
@@ -265,7 +470,8 @@ export const fetchMyAttempts = async (
   return ((await response.json()) as ApiSubmission[]).map(toSubmission);
 };
 
-// Only stores the attempt. The code is never run in the browser or the API.
+// Stores the attempt and queues it. The code is never run in the browser or
+// the API, only in isolated containers by the execution worker.
 export const submitAttempt = async (
   courseId: number,
   assignmentId: number,
@@ -364,4 +570,118 @@ export const changePassword = async (
     current_password: currentPassword,
     new_password: newPassword,
   });
+};
+
+// Instructor gradebook. The API checks that the user teaches the course and
+// limits it to their own students.
+
+const toAttemptSummary = (attempt: ApiAttemptSummary): AttemptSummary => ({
+  id: attempt.id,
+  attemptNumber: attempt.attempt_number,
+  status: attempt.status,
+  submittedAt: attempt.submitted_at,
+  passedCount: attempt.passed_count,
+  testCount: attempt.test_count,
+});
+
+export const fetchGradebook = async (courseId: number): Promise<Gradebook> => {
+  const response = await sendRequest(`/courses/${courseId}/gradebook`);
+  const body = (await response.json()) as ApiGradebook;
+  return {
+    assignments: body.assignments.map((assignment) => ({
+      id: assignment.id,
+      title: assignment.title,
+      status: assignment.status,
+      dueAt: assignment.due_at,
+      maxPoints: assignment.max_points,
+    })),
+    students: body.students.map((student) => ({
+      id: student.id,
+      fullName: student.full_name,
+      sectionCode: student.section_code,
+    })),
+    cells: body.cells.map((cell) => ({
+      assignmentId: cell.assignment_id,
+      studentId: cell.student_id,
+      latest: toAttemptSummary(cell.latest),
+      suggestedPoints: cell.suggested_points,
+      needsReview: cell.needs_review,
+      grade: cell.grade && {
+        submissionId: cell.grade.submission_id,
+        points: cell.grade.points,
+        isOutdated: cell.grade.is_outdated,
+      },
+    })),
+  };
+};
+
+const reviewPath = (
+  courseId: number,
+  assignmentId: number,
+  submissionId: number,
+) => `${assignmentsPath(courseId, assignmentId)}/attempts/${submissionId}`;
+
+const toAttemptReview = (body: ApiAttemptReview): AttemptReview => ({
+  ...toAttemptSummary(body),
+  student: { id: body.student.id, fullName: body.student.full_name },
+  assignment: body.assignment,
+  language: body.language,
+  code: body.code,
+  results: body.results.map((result) => ({
+    testName: result.test_name,
+    visibility: result.visibility,
+    passed: result.passed,
+    errorType: result.error_type,
+    runtimeMs: result.runtime_ms,
+    stdinInput: result.stdin_input,
+    expectedOutput: result.expected_output,
+    actualOutput: result.actual_output,
+    errorOutput: result.error_output,
+  })),
+  feedback: body.feedback && {
+    source: body.feedback.source,
+    summary: body.feedback.summary,
+    items: body.feedback.items.map((item) => ({
+      kind: item.kind,
+      message: item.message,
+      lineStart: item.line_start,
+      criterionTitle: item.criterion_title,
+    })),
+  },
+  isGraded: body.is_graded,
+  criteria: body.criteria.map((criterion) => ({
+    id: criterion.id,
+    title: criterion.title,
+    description: criterion.description,
+    maxPoints: criterion.max_points,
+    isTested: criterion.is_tested,
+    suggestedPoints: criterion.suggested_points,
+    finalPoints: criterion.final_points,
+    overrideReason: criterion.override_reason,
+  })),
+  attempts: body.attempts.map(toAttemptSummary),
+});
+
+export const fetchAttemptReview = async (
+  courseId: number,
+  assignmentId: number,
+  submissionId: number,
+): Promise<AttemptReview> =>
+  toAttemptReview(
+    (await (
+      await sendRequest(reviewPath(courseId, assignmentId, submissionId))
+    ).json()) as ApiAttemptReview,
+  );
+
+export const approveGrade = async (
+  courseId: number,
+  assignmentId: number,
+  submissionId: number,
+  scores: ScoreInput[],
+): Promise<AttemptReview> => {
+  const response = await postJson(
+    `${reviewPath(courseId, assignmentId, submissionId)}/grade`,
+    { scores },
+  );
+  return toAttemptReview((await response.json()) as ApiAttemptReview);
 };

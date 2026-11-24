@@ -1,10 +1,11 @@
 """Assignment rules for instructors. Views call these instead of changing
 models directly, so the rules live in one place."""
 
+from django.db.models import Max
 from django.utils import timezone
 from rest_framework.exceptions import APIException, ValidationError
 
-from .models import Assignment
+from .models import Assignment, RubricCriterion, TestCase
 
 
 class AssignmentRuleError(APIException):
@@ -41,9 +42,14 @@ def create_assignment(course_id, *, publish=False, **fields):
     return assignment
 
 
-def update_assignment(assignment, *, status=None, **fields):
+def ensure_editable(assignment):
+    """Archived work is frozen, together with its rubric and tests."""
     if assignment.status == Status.ARCHIVED:
         raise AssignmentRuleError('Archived assignments cannot be changed.')
+
+
+def update_assignment(assignment, *, status=None, **fields):
+    ensure_editable(assignment)
 
     for name, value in fields.items():
         setattr(assignment, name, value)
@@ -66,3 +72,62 @@ def delete_assignment(assignment):
     if assignment.status != Status.DRAFT:
         raise AssignmentRuleError('Only draft assignments can be deleted. Archive it instead.')
     assignment.delete()
+
+
+# Rubric criteria and test cases. Both belong to one assignment; the views
+# look them up inside the URL's course and assignment before calling these.
+
+
+def _set_fields(instance, fields):
+    for name, value in fields.items():
+        setattr(instance, name, value)
+    instance.save()
+    return instance
+
+
+def create_criterion(assignment, **fields):
+    ensure_editable(assignment)
+    if 'position' not in fields:
+        # New criteria go to the end of the rubric.
+        last = assignment.rubric_criteria.aggregate(last=Max('position'))['last']
+        fields['position'] = 0 if last is None else last + 1
+    return RubricCriterion.objects.create(assignment=assignment, **fields)
+
+
+def update_criterion(criterion, **fields):
+    ensure_editable(criterion.assignment)
+    return _set_fields(criterion, fields)
+
+
+def delete_criterion(criterion):
+    # Its test cases stay and are only unlinked (on_delete=SET_NULL).
+    ensure_editable(criterion.assignment)
+    criterion.delete()
+
+
+def _check_criterion(assignment, fields):
+    """A test may only count toward a criterion of its own assignment. The
+    serializer sends `criterion` as an id; it is stored as criterion_id."""
+    if 'criterion' not in fields:
+        return
+    criterion_id = fields.pop('criterion')
+    if criterion_id is not None and not assignment.rubric_criteria.filter(id=criterion_id).exists():
+        raise ValidationError({'criterion': ["Choose a criterion from this assignment's rubric."]})
+    fields['criterion_id'] = criterion_id
+
+
+def create_test_case(assignment, **fields):
+    ensure_editable(assignment)
+    _check_criterion(assignment, fields)
+    return TestCase.objects.create(assignment=assignment, **fields)
+
+
+def update_test_case(test_case, **fields):
+    ensure_editable(test_case.assignment)
+    _check_criterion(test_case.assignment, fields)
+    return _set_fields(test_case, fields)
+
+
+def delete_test_case(test_case):
+    ensure_editable(test_case.assignment)
+    test_case.delete()
