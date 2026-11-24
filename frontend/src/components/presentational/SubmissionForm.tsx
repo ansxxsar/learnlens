@@ -83,8 +83,8 @@ export function SubmissionForm({
 
       {savedAttempt !== null && (
         <p className="account-card__saved" role="status">
-          Attempt {savedAttempt} saved. It counts for today's progress, and
-          its test results will appear below.
+          Attempt {savedAttempt} saved. It counts for today's progress, and its
+          test results will appear below.
         </p>
       )}
 

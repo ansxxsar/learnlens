@@ -10,6 +10,8 @@ Apps:
 - `submissions` – attempts and their results: `submissions`, `submission_files`, `test_results`
 - `execution` – the Celery worker that runs attempts in isolated Docker containers (no tables)
 - `feedback` – feedback on each attempt: `feedback`, `feedback_items`
+- `grading` – the instructor gradebook and approved scores: `criterion_scores`
+- `audit` – an append-only log of assessment changes: `audit_logs`
 
 Table and column names follow [docs/erd/learnlens-erd.drawio](../docs/erd/learnlens-erd.drawio).
 
@@ -265,3 +267,32 @@ Feedback never changes test results or grades. If building it fails, the error i
 keeps its results. Items link to their rubric criterion, test result and, for line numbers, the entry
 file. Feedback with `source = "ai"` must record `model_name` and `prompt_version` (database constraint);
 AI feedback is not built yet.
+
+## Gradebook and grades
+
+Instructors grade from a sheet of their students × the course's published and closed assignments. Only the
+student's **latest** attempt is suggested for grading, and nothing reaches the student until an instructor
+approves it (AGENTS.md: a suggestion is never the final grade).
+
+| Endpoint | Purpose | Success |
+|---|---|---|
+| `GET /courses/{id}/gradebook` | Instructors: `assignments`, `students` and one `cell` per student with attempts | 200 |
+| `GET /courses/{id}/assignments/{aid}/attempts/{sid}` | Instructors: one attempt with code, every test result (hidden ones too), feedback, suggestions and scores | 200 |
+| `POST /courses/{id}/assignments/{aid}/attempts/{sid}/grade` | Instructors: body `{"scores": [{"criterion", "points", "reason"}]}`. Approves the grade | 200 |
+
+- **Suggested points** (`grading/scoring.py`): a criterion earns its `max_points` in proportion to the weight
+  of its passed tests. A criterion with no tests has no suggestion and the instructor must enter it (later,
+  AI feedback may suggest it). Tests linked to no criterion do not count toward points.
+- A cell has the latest attempt, `suggested_points` (the sum over tested criteria), `needs_review` (some
+  criterion waits for the instructor) and `grade` (the latest approved attempt, with `is_outdated` when a
+  newer attempt arrived).
+- **Approving**: a criterion sent without `points` takes its suggestion. Points must be between 0 and the
+  criterion's maximum. Points that differ from a suggestion need a `reason`, which is stored with the
+  instructor and time (`overridden_by`, `override_reason`, `overridden_at`). Errors come back per criterion
+  as `{"score_<criterion id>": ["..."]}`. Attempts still queued or running cannot be graded. Approving again
+  replaces the scores.
+- `criterion_scores` rows exist only for approved grades, so students never see a suggestion. Students get
+  `grade` (`points`, `max_points`, `criteria`) on their graded attempt in `GET .../submissions`.
+- Section instructors see and grade only their own section; anyone else's attempt answers 404.
+- Every approval adds an `audit_logs` row (`grade.approved`) with the actor and the auto and final points per
+  criterion, never code or the reason text. Audit rows are read-only in the admin site.

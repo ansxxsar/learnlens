@@ -70,7 +70,8 @@ export function TestCaseForm({
       ...fields,
       weight: Number(fields.weight),
       timeLimitMs: Number(fields.timeLimitMs),
-      criterionId: fields.criterionId === "" ? null : Number(fields.criterionId),
+      criterionId:
+        fields.criterionId === "" ? null : Number(fields.criterionId),
     });
   };
 
@@ -102,7 +103,9 @@ export function TestCaseForm({
           value={fields.visibility}
           onChange={(event) => set("visibility")(event.target.value)}
         >
-          <option value="hidden">Hidden: only you see the input and output</option>
+          <option value="hidden">
+            Hidden: only you see the input and output
+          </option>
           <option value="public">Public: students see it as an example</option>
         </select>
       </div>
